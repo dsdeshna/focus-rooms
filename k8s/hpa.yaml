@@ -1,0 +1,25 @@
+# ============================================================
+# HorizontalPodAutoscaler — Auto-scales pods based on CPU
+# Scales between 2 and 5 replicas when CPU exceeds 70%.
+# ============================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: focus-rooms-hpa
+  namespace: focus-rooms
+  labels:
+    app: focus-rooms
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: focus-rooms
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

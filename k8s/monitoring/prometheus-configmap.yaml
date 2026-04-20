@@ -1,0 +1,33 @@
+# ============================================================
+# Prometheus ConfigMap — Scrape configuration
+# Tells Prometheus where to find the Focus Rooms metrics
+# endpoint and how often to scrape.
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+  labels:
+    app: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      # Scrape Prometheus itself
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      # Scrape Focus Rooms application metrics
+      - job_name: 'focus-rooms'
+        metrics_path: '/api/metrics'
+        scrape_interval: 15s
+        static_configs:
+          - targets: ['focus-rooms-service.focus-rooms.svc.cluster.local:80']
+            labels:
+              app: 'focus-rooms'
+              environment: 'production'

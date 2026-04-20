@@ -1,0 +1,14 @@
+# ============================================================
+# ConfigMap — Non-sensitive environment configuration
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: focus-rooms-config
+  namespace: focus-rooms
+  labels:
+    app: focus-rooms
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  NEXT_TELEMETRY_DISABLED: "1"

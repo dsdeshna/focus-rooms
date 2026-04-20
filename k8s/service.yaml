@@ -1,0 +1,19 @@
+# ============================================================
+# Kubernetes Service — Exposes Focus Rooms pods internally
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: focus-rooms-service
+  namespace: focus-rooms
+  labels:
+    app: focus-rooms
+spec:
+  type: ClusterIP
+  selector:
+    app: focus-rooms
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
