@@ -1,9 +1,9 @@
 # 🌸 Focus Rooms
 
-A collaborative focus room web application where people can join rooms, share whiteboards, play ambient sounds, talk via mic, and take personal notes — all wrapped in a dreamy, Tumblr-inspired pastel aesthetic.
+A collaborative focus room web application where people can join rooms, share whiteboards, play ambient sounds, talk via mic, share their screens, and take personal notes — all wrapped in a dreamy, Tumblr-inspired pastel aesthetic.
 
 **Built for:** Cloud Computing + Software Patterns courses  
-**Deployment:** AWS EKS (Kubernetes) with Docker containerization and Prometheus/Grafana monitoring
+**Deployment:** Vercel (Frontend/Next.js) + Supabase (Database/Auth/Realtime)
 
 ---
 
@@ -17,15 +17,15 @@ A collaborative focus room web application where people can join rooms, share wh
 | 🎚️ **Frequency Slider** | Tunable sine wave generator (20Hz–2000Hz) with preset frequencies |
 | 🌧️ **Ambient Sounds** | Rain, café, forest, ocean, fireplace, wind |
 | 🎤 **Voice Chat** | Toggle mic for real-time voice communication (WebRTC peer-to-peer) |
+| 🖼️ **Screen Sharing** | Share your screen with all room participants (WebRTC) |
 | 🎨 **Collaborative Whiteboard** | Draw together with color picker and adjustable brush sizes |
 | 📥 **Save Whiteboard** | Download the whiteboard as a PNG image |
 | 📝 **Sticky Notes** | Personal, translucent, draggable notes visible only to you |
-| 🔔 **Notifications** | Toast notifications when someone opens whiteboard or joins |
+| 🔔 **Notifications** | Toast notifications when someone joins or opens the whiteboard |
 | 👥 **Participant List** | Zoom-style list with mic on/off indicators |
 | 🖼️ **Custom Backgrounds** | Upload a background image for the room |
 | 🎨 **8 Color Themes** | Switch between 8 distinct pastel themes (Strategy Pattern) |
 | ⚙️ **Account Settings** | Edit display name, link Instagram/LinkedIn/GitHub |
-| 📊 **Monitoring** | Prometheus metrics + Grafana dashboards for observability |
 
 ---
 
@@ -36,25 +36,22 @@ A collaborative focus room web application where people can join rooms, share wh
 | Frontend | Next.js 16 (App Router) + React 19 + TypeScript |
 | Styling | Tailwind CSS + Custom CSS (glassmorphism, animations) |
 | Fonts | Playfair Display + Lora (Google Fonts) |
-| Auth | Supabase Auth (email + Google OAuth) |
-| Database | Supabase PostgreSQL |
+| Auth & DB | Supabase (PostgreSQL + GoTrue) |
 | Real-time | Supabase Realtime (Broadcast + Presence) |
-| Voice | WebRTC (peer-to-peer) with Supabase signaling |
+| Voice & Video | WebRTC (peer-to-peer) with Supabase signaling |
 | Whiteboard | Fabric.js (HTML5 Canvas) |
 | Audio | Web Audio API (noise generators, oscillator) |
-| Containerization | Docker (multi-stage build) |
-| Orchestration | Kubernetes (AWS EKS) |
-| Monitoring | Prometheus + Grafana |
-| CI/CD | GitHub Actions → AWS ECR → EKS |
-| Metrics | prom-client (Node.js Prometheus client) |
+| Deployment | **Vercel** (Frontend) + **Supabase Engine** (Backend) |
+
+> 💡 **Why Vercel & Supabase?** You might also optionally use Railway for the Postgres backend if you wish to self-host Supabase services. However, connecting directly to Supabase cloud is fundamentally completely "Serverless", which maps seamlessly to our core cloud patterns!
 
 ---
 
 ## 🧩 Design & Cloud Patterns
 
-This project implements **6 software design patterns** and **4 cloud computing / DevOps patterns**. Every pattern is clearly marked in the code with comments.
+This project implements **6 software design patterns** and **2 cloud computing patterns**. Every pattern is clearly marked in the code with comments.
 
-See [`PATTERNS.md`](./PATTERNS.md) for a complete guide to all patterns with file locations.
+See [`PATTERNS.md`](./PATTERNS.md) for a complete guide with exact file locations.
 
 | # | Pattern | Type |
 |---|---------|------|
@@ -64,430 +61,86 @@ See [`PATTERNS.md`](./PATTERNS.md) for a complete guide to all patterns with fil
 | 4 | Repository | Software — Structural |
 | 5 | Singleton | Software — Creational |
 | 6 | Command | Software — Behavioral |
-| 7 | Containerization (Docker) | DevOps / Cloud |
-| 8 | Container Orchestration (Kubernetes) | DevOps / Cloud |
-| 9 | Monitoring & Observability (Prometheus + Grafana) | DevOps / Cloud |
-| 10 | Event-Driven Architecture | Cloud Architecture |
+| 7 | Serverless Architecture | Cloud |
+| 8 | Event-Driven Architecture | Cloud Architecture |
 
 ---
 
-## 🚀 Getting Started (Local Development)
+## 🚀 Step-by-Step Setup Instructions
+
+For an expanded set of step-by-step guidance including screenshots and exact navigation sequences, refer to [`SETUP.md`](./SETUP.md) located in this directory. 
 
 ### Prerequisites
 
 - **Node.js** 18+ installed ([download](https://nodejs.org))
 - **npm** (comes with Node.js)
-- A **Supabase** account (free tier: [supabase.com](https://supabase.com))
-- (Optional) **Docker Desktop** for local container testing
+- A **Supabase** account (Free tier: [supabase.com](https://supabase.com))
+- A **Vercel** account (Free tier: [vercel.com](https://vercel.com))
 
-### Step 1: Clone the Repository
+### 1. Database & Authentication (Supabase)
+
+1. Create a project at [Supabase](https://supabase.com).
+2. Grab your environment variables from **Project Settings → API**:
+   - `Project URL` → Map to `NEXT_PUBLIC_SUPABASE_URL`
+   - `anon / public key` → Map to `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Go to the **SQL Editor**, launch a **New Query**, and paste the full contents of [`supabase-schema.sql`](./supabase-schema.sql), then click **Run**.
+4. (Optional) Setup Google login by going to **Authentication → Providers**. Create an OAuth App inside Google Cloud Console and paste the secret/ID into Supabase.
+
+### 2. Local Environment Configuration
 
 ```bash
-git clone https://github.com/yourusername/cloud-com-soft-patterns.git
-cd cloud-com-soft-patterns
-```
+# Clone the repository
+git clone https://github.com/yourusername/focus-rooms.git
+cd focus-rooms
 
-### Step 2: Install Dependencies
-
-```bash
+# Install dependencies
 npm install
-```
 
-### Step 3: Set Up Supabase
-
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. Once created, go to **Settings → API** and copy:
-   - `Project URL` → this is your `NEXT_PUBLIC_SUPABASE_URL`
-   - `anon / public` key → this is your `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Go to **SQL Editor** → click **New Query**
-4. Paste the entire contents of [`supabase-schema.sql`](./supabase-schema.sql) and click **Run**
-5. This creates all tables, RLS policies, and triggers
-
-### Step 4: Configure Environment Variables
-
-```bash
-# Copy the example env file
+# Prepare environment values
 cp .env.example .env.local
 ```
 
-Edit `.env.local` with your Supabase credentials:
+Inside `.env.local`, map in the Supabase Variables you extracted during step 1.
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
-### Step 5: (Optional) Set Up Google OAuth
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project or select an existing one
-3. Go to **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**
-4. Set **Authorized redirect URIs** to:
-   - `https://your-project-id.supabase.co/auth/v1/callback`
-5. Copy the **Client ID** and **Client Secret**
-6. In the Supabase Dashboard, go to **Authentication → Providers → Google**
-7. Enable Google and paste the Client ID and Client Secret
-
-### Step 6: Run Locally
+### 3. Run Development Server locally
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) and test the application securely.
 
 ---
 
-## 🐳 Docker (Local Container Testing)
+## ☁️ Deployment (Vercel)
 
-### Build and Run the Docker Image
+This application is strictly optimized for **Vercel** deployment with zero-config edge rendering!
 
+### 1. Upload to GitHub
+Initialize your repo and push your code.
 ```bash
-# Build the image
-docker build \
-  --build-arg NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
-  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key \
-  -t focus-rooms .
-
-# Run the container
-docker run -p 3000:3000 focus-rooms
+git init
+git add .
+git commit -m "feat: initial commit"
+git branch -M main
+git remote add origin https://github.com/yourusername/focus-rooms-app.git
+git push -u origin main
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — you're now running in a container!
-
-### Verify Health & Metrics
-
-```bash
-# Health check (used by Kubernetes probes)
-curl http://localhost:3000/api/health
-
-# Prometheus metrics endpoint
-curl http://localhost:3000/api/metrics
-```
-
----
-
-## ☁️ AWS Deployment Guide
-
-This section walks you through deploying Focus Rooms to AWS from scratch.
-
-### Accounts You Need to Create
-
-| Service | URL | What it's for | Cost |
-|---------|-----|---------------|------|
-| **AWS** | [aws.amazon.com](https://aws.amazon.com) | ECR (container registry), EKS (Kubernetes) | Free tier available; EKS ~$0.10/hr per cluster |
-| **Supabase** | [supabase.com](https://supabase.com) | Database, Auth, Realtime | Free tier (500MB DB, 50K MAU) |
-| **GitHub** | [github.com](https://github.com) | Source code + CI/CD via Actions | Free |
-| **Docker Hub** _(optional)_ | [hub.docker.com](https://hub.docker.com) | Docker Desktop download | Free |
-
-### Step 1: Install Required CLI Tools
-
-You need these tools installed on your machine:
-
-```bash
-# 1. Install AWS CLI
-# Download from: https://aws.amazon.com/cli/
-# After install, verify:
-aws --version
-
-# 2. Install kubectl (Kubernetes CLI)
-# Download from: https://kubernetes.io/docs/tasks/tools/
-# After install, verify:
-kubectl version --client
-
-# 3. Install eksctl (EKS cluster management)
-# Download from: https://eksctl.io/installation/
-# After install, verify:
-eksctl version
-
-# 4. Install Docker Desktop
-# Download from: https://www.docker.com/products/docker-desktop/
-docker --version
-```
-
-### Step 2: Configure AWS Account
-
-```bash
-# Create an AWS account at https://aws.amazon.com if you haven't already.
-# Then create an IAM user with programmatic access:
-#   1. Go to AWS Console → IAM → Users → Create User
-#   2. Give it a name like "focus-rooms-deployer"
-#   3. Attach these policies:
-#      - AmazonEC2ContainerRegistryFullAccess
-#      - AmazonEKSClusterPolicy
-#      - AmazonEKSWorkerNodePolicy
-#      - AmazonEKS_CNI_Policy
-#      - AmazonEKSServicePolicy
-#   4. Create access keys (Access Key ID + Secret Access Key)
-
-# Configure AWS CLI with your credentials:
-aws configure
-# It will prompt for:
-#   AWS Access Key ID:     <paste your access key>
-#   AWS Secret Access Key: <paste your secret key>
-#   Default region name:   ap-south-1    (or your preferred region)
-#   Default output format: json
-```
-
-### Step 3: Create ECR Repository (Container Registry)
-
-```bash
-# Create a repository to store your Docker images
-aws ecr create-repository \
-  --repository-name focus-rooms \
-  --region ap-south-1
-
-# Note the repositoryUri from the output — it looks like:
-# 123456789012.dkr.ecr.ap-south-1.amazonaws.com/focus-rooms
-```
-
-### Step 4: Create EKS Cluster (Kubernetes)
-
-```bash
-# This creates a Kubernetes cluster on AWS (takes ~15-20 minutes)
-eksctl create cluster \
-  --name focus-rooms-cluster \
-  --region ap-south-1 \
-  --nodegroup-name focus-rooms-nodes \
-  --node-type t3.medium \
-  --nodes 2 \
-  --nodes-min 1 \
-  --nodes-max 3 \
-  --managed
-
-# Verify the cluster is ready:
-kubectl get nodes
-# You should see 2 nodes in "Ready" state
-```
-
-### Step 5: Install the AWS Load Balancer Controller
-
-The Ingress resource requires the AWS ALB controller:
-
-```bash
-# Add the EKS Helm chart repo
-helm repo add eks https://aws.github.io/eks-charts
-helm repo update
-
-# Install the AWS Load Balancer Controller
-helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
-  -n kube-system \
-  --set clusterName=focus-rooms-cluster \
-  --set serviceAccount.create=true \
-  --set serviceAccount.name=aws-load-balancer-controller
-```
-
-### Step 6: Build and Push Docker Image
-
-```bash
-# Login to ECR
-aws ecr get-login-password --region ap-south-1 | \
-  docker login --username AWS --password-stdin \
-  123456789012.dkr.ecr.ap-south-1.amazonaws.com
-
-# Build the image (replace with your Supabase values)
-docker build \
-  --build-arg NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
-  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key \
-  -t 123456789012.dkr.ecr.ap-south-1.amazonaws.com/focus-rooms:latest .
-
-# Push to ECR
-docker push 123456789012.dkr.ecr.ap-south-1.amazonaws.com/focus-rooms:latest
-```
-
-### Step 7: Update Kubernetes Secrets
-
-```bash
-# Edit k8s/secret.yaml with your real base64-encoded values:
-# Generate base64 values:
-echo -n "https://your-project.supabase.co" | base64
-echo -n "your-anon-key" | base64
-
-# Paste the output into k8s/secret.yaml, replacing the placeholders
-```
-
-### Step 8: Update the Deployment Image
-
-Edit `k8s/deployment.yaml` and replace the image placeholder:
-
-```yaml
-# Change this line:
-image: <AWS_ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/focus-rooms:latest
-# To your actual ECR URI:
-image: 123456789012.dkr.ecr.ap-south-1.amazonaws.com/focus-rooms:latest
-```
-
-### Step 9: Deploy Everything to Kubernetes
-
-```bash
-# Deploy the application
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/configmap.yaml
-kubectl apply -f k8s/secret.yaml
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/ingress.yaml
-kubectl apply -f k8s/hpa.yaml
-
-# Deploy monitoring stack
-kubectl apply -f k8s/monitoring/prometheus-configmap.yaml
-kubectl apply -f k8s/monitoring/prometheus-deployment.yaml
-kubectl apply -f k8s/monitoring/grafana-datasource-configmap.yaml
-kubectl apply -f k8s/monitoring/grafana-deployment.yaml
-
-# Verify everything is running
-kubectl get pods -n focus-rooms
-kubectl get pods -n monitoring
-
-# Get your application's external URL (ALB DNS)
-kubectl get ingress -n focus-rooms
-# The ADDRESS column shows your public URL
-
-# Get Grafana's external URL
-kubectl get svc grafana-service -n monitoring
-# The EXTERNAL-IP column shows the Grafana URL (port 3000)
-```
-
-### Step 10: Set Up GitHub Actions (CI/CD)
-
-Add these secrets to your GitHub repository for automated deployments:
-
-1. Go to your GitHub repo → **Settings → Secrets and variables → Actions**
-2. Add these repository secrets:
-
-| Secret Name | Value |
-|-------------|-------|
-| `AWS_ACCESS_KEY_ID` | Your AWS access key |
-| `AWS_SECRET_ACCESS_KEY` | Your AWS secret key |
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon key |
-
-Now every push to `main` will automatically build, push, and deploy!
-
----
-
-## 📊 Monitoring with Prometheus & Grafana
-
-### Accessing Grafana
-
-After deployment, get the Grafana URL:
-
-```bash
-kubectl get svc grafana-service -n monitoring
-```
-
-Open the EXTERNAL-IP at port 3000. Login with:
-- **Username:** `admin`
-- **Password:** `admin`
-
-### Creating a Dashboard
-
-1. In Grafana, click **+** → **New Dashboard** → **Add Visualization**
-2. Select **Prometheus** as the data source
-3. Use these example queries:
-
-| Panel | Prometheus Query | Description |
-|-------|-----------------|-------------|
-| Request Rate | `rate(http_requests_total[5m])` | Requests per second |
-| Request Duration | `histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))` | P95 latency |
-| Active Rooms | `active_rooms_total` | Current active rooms |
-| Memory Usage | `process_resident_memory_bytes` | Node.js memory usage |
-| CPU Usage | `rate(process_cpu_seconds_total[5m])` | CPU utilization |
-| Event Loop Lag | `nodejs_eventloop_lag_seconds` | Node.js event loop lag |
-
-### Prometheus Metrics Endpoint
-
-The app exposes metrics at `/api/metrics` in Prometheus text format:
-
-```bash
-# Test locally
-curl http://localhost:3000/api/metrics
-
-# Test on K8s
-kubectl port-forward svc/focus-rooms-service 3000:80 -n focus-rooms
-curl http://localhost:3000/api/metrics
-```
-
----
-
-## 📁 Project Structure
-
-```
-cloud-com-soft-patterns/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml              # CI/CD: Build → ECR → EKS
-├── k8s/                            # Kubernetes manifests
-│   ├── namespace.yaml              # focus-rooms namespace
-│   ├── configmap.yaml              # Non-sensitive env vars
-│   ├── secret.yaml                 # Supabase credentials (gitignored)
-│   ├── deployment.yaml             # App deployment (2 replicas)
-│   ├── service.yaml                # ClusterIP service
-│   ├── ingress.yaml                # AWS ALB ingress
-│   ├── hpa.yaml                    # Auto-scaler (2-5 pods)
-│   └── monitoring/
-│       ├── prometheus-configmap.yaml
-│       ├── prometheus-deployment.yaml
-│       ├── grafana-deployment.yaml
-│       └── grafana-datasource-configmap.yaml
-├── public/                         # Static assets
-├── src/
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── health/route.ts     # K8s health probe endpoint
-│   │   │   └── metrics/route.ts    # Prometheus metrics endpoint
-│   │   ├── auth/
-│   │   │   ├── login/page.tsx      # Login page
-│   │   │   ├── signup/page.tsx     # Signup page
-│   │   │   └── callback/route.ts   # OAuth callback
-│   │   ├── dashboard/page.tsx      # Create/join rooms
-│   │   ├── room/[code]/page.tsx    # Main room experience
-│   │   ├── settings/page.tsx       # Account settings
-│   │   ├── layout.tsx              # Root layout
-│   │   ├── page.tsx                # Landing page
-│   │   └── globals.css             # Global styles + themes
-│   ├── components/
-│   │   ├── room/
-│   │   │   ├── AudioPanel.tsx      # Sound controls (Factory)
-│   │   │   ├── Whiteboard.tsx      # Collaborative canvas (Command)
-│   │   │   ├── ParticipantList.tsx  # Participant list
-│   │   │   ├── StickyNotes.tsx     # Personal notes (Repository)
-│   │   │   └── NotificationToasts.tsx
-│   │   └── theme/
-│   │       ├── ThemeProvider.tsx    # Theme context (Strategy)
-│   │       └── ThemeSwitcher.tsx    # Theme picker
-│   ├── lib/
-│   │   ├── supabase/
-│   │   │   ├── client.ts           # Browser client (Singleton)
-│   │   │   └── server.ts           # Server client
-│   │   ├── audio/
-│   │   │   └── SoundFactory.ts     # Factory Pattern
-│   │   ├── themes/
-│   │   │   └── ThemeStrategy.ts    # Strategy Pattern
-│   │   ├── realtime/
-│   │   │   └── RealtimeManager.ts  # Observer + Event-Driven
-│   │   ├── repositories/           # Repository Pattern
-│   │   │   ├── RoomRepository.ts
-│   │   │   ├── UserRepository.ts
-│   │   │   ├── NoteRepository.ts
-│   │   │   └── WhiteboardRepository.ts
-│   │   ├── webrtc/
-│   │   │   └── PeerManager.ts      # WebRTC P2P connections
-│   │   ├── metrics.ts              # Prometheus registry (Singleton)
-│   │   ├── utils.ts                # Utility functions
-│   │   └── utils/
-│   │       └── image.ts            # Image compression
-│   ├── middleware.ts                # Auth protection + metrics
-│   └── types/
-│       └── index.ts                # TypeScript type definitions
-├── Dockerfile                      # Multi-stage Docker build
-├── .dockerignore                   # Docker build context filter
-├── .env.example                    # Environment variable template
-├── PATTERNS.md                     # Pattern documentation
-├── README.md                       # This file
-├── supabase-schema.sql             # Database schema
-└── package.json
-```
+### 2. Vercel Hookup
+1. Log into your [Vercel Dashboard](https://vercel.com).
+2. Click **Add New** → **Project**, and import your newly created GitHub repository.
+3. Once imported, locate the **Environment Variables** drop down before clicking deploy.
+4. Input the two keys (`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+5. Hit **Deploy** and wait less than a minute. Your app is officially live on a `.vercel.app` domain!
+
+### Wait, what about Railway?
+If you would like to run the databases via Railway, you could spin up a PostgreSQL instance there. However, Focus Rooms specifically needs **Supabase Realtime** for the Event-Driven architectural patterns (Whiteboards, P2P signaling). Supabase Cloud is highly recommended since self-hosting the full Supabase suite requires spinning up Docker nodes on Railway individually.
 
 ---
 
@@ -495,55 +148,43 @@ cloud-com-soft-patterns/
 
 | Theme | Colors |
 |-------|--------|
-| 🌸 Lavender Dream | Soft purple/lilac palette |
-| 🌹 Rose Garden | Pink/rose palette |
-| 🌊 Ocean Breeze | Cool blue palette |
-| 🌿 Sage Meadow | Earthy green palette |
-| 🌻 Honey Glow | Warm golden/amber palette |
-| 🧡 Sunset Ember | Coral/warm orange palette |
-| 🌙 Midnight Muse | Dark navy (dark mode) |
-| ☕ Mocha Cream | Warm brown/beige palette |
+| 🌸 Lavender Dream | Soft purple/lilac |
+| 🌹 Rose Garden | Pink/rose |
+| 🌊 Ocean Breeze | Cool blue |
+| 🌿 Sage Meadow | Earthy green |
+| 🌻 Honey Glow | Warm golden/amber |
+| 🧡 Sunset Ember | Coral/warm |
+| 🌙 Midnight Muse | Dark navy |
+| ☕ Mocha Cream | Warm brown/beige |
 
 ---
 
-## 🔑 Cloud Services Used
+## 📁 Repository Structure Overview
 
-| Service | What it provides | Free tier |
-|---------|-----------------|-----------|
-| **AWS EKS** | Kubernetes cluster | ~$0.10/hr per cluster |
-| **AWS ECR** | Docker container registry | 500MB free storage |
-| **Supabase** | Database, Auth, Realtime | 500MB DB, 50K MAU |
-| **GitHub Actions** | CI/CD pipeline | 2,000 minutes/month free |
-| **Prometheus** | Metrics collection | Open source (self-hosted) |
-| **Grafana** | Metrics visualization | Open source (self-hosted) |
-
----
-
-## 🧹 Useful Commands
-
-```bash
-# ── Local Development ──
-npm run dev                 # Start dev server
-npm run build               # Production build
-npm run lint                # Run ESLint
-
-# ── Docker ──
-docker build -t focus-rooms .
-docker run -p 3000:3000 focus-rooms
-
-# ── Kubernetes ──
-kubectl get pods -n focus-rooms            # List app pods
-kubectl get pods -n monitoring             # List monitoring pods
-kubectl logs -f deployment/focus-rooms -n focus-rooms  # Stream logs
-kubectl get hpa -n focus-rooms             # Check autoscaler status
-kubectl get ingress -n focus-rooms         # Get public URL
-
-# ── Monitoring ──
-kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring   # Prometheus UI
-kubectl port-forward svc/grafana-service 3001:3000 -n monitoring      # Grafana UI
-
-# ── Cleanup (delete everything) ──
-kubectl delete namespace focus-rooms
-kubectl delete namespace monitoring
-eksctl delete cluster --name focus-rooms-cluster --region ap-south-1
+```
+focus-rooms/
+├── public/                         # Static assets (sounds, etc.)
+├── src/
+│   ├── app/
+│   │   ├── auth/                   # Authentication gateways
+│   │   ├── dashboard/page.tsx      # Main dashboard logic
+│   │   ├── room/[code]/page.tsx    # Sub-room WebRTC/Realtime layout
+│   │   ├── settings/page.tsx       # Auth profile edits
+│   │   ├── layout.tsx              # Root HTML logic
+│   │   ├── page.tsx                # Landing
+│   │   └── globals.css             # Utilities (Tailwind wrapper)
+│   ├── components/                 # Isolated React Components (Whiteboard, Audio, Themes)
+│   ├── lib/
+│   │   ├── supabase/               # Pattern: Singleton DB Accessors
+│   │   ├── audio/                  # Pattern: Factory Audio Interfaces
+│   │   ├── themes/                 # Pattern: Strategy Themer
+│   │   ├── realtime/               # Pattern: Event-Driven Observer Logic
+│   │   ├── repositories/           # Pattern: Repository database proxies
+│   │   └── webrtc/                 # P2P mesh logic (Vanilla)
+│   └── proxy.ts                    # Routing & server-shield logic
+├── .env.example                    # Env var scaffold
+├── PATTERNS.md                     # Software & Cloud definitions
+├── SETUP.md                        # Expanded instructional list
+├── README.md                       # High Level Overview
+└── supabase-schema.sql             # Live database blueprint
 ```

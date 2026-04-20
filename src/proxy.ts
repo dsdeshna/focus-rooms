@@ -1,17 +1,15 @@
 // ============================================================
-// Next.js Proxy — Auth Protection + Prometheus Metrics
+// Next.js Proxy — Auth Protection
 // 
 // This proxy runs on EVERY request. It:
-// 1. Records HTTP metrics for Prometheus monitoring
-// 2. Protects routes behind Supabase authentication
-// 3. Redirects authenticated users away from auth pages
+// 1. Protects routes behind Supabase authentication
+// 2. Redirects authenticated users away from auth pages
 // ============================================================
 
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
-  const startTime = Date.now();
   let supabaseResponse = NextResponse.next({ request });
 
   // ── Supabase Auth Client ──
@@ -59,10 +57,6 @@ export async function proxy(request: NextRequest) {
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
-
-  // ── Prometheus Metrics (response timing header) ──
-  const duration = Date.now() - startTime;
-  supabaseResponse.headers.set('X-Response-Time', `${duration}ms`);
 
   return supabaseResponse;
 }

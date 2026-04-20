@@ -1,6 +1,6 @@
 # 🧩 Design Patterns & Cloud Patterns — Focus Rooms
 
-This document explains every software design pattern and cloud computing / DevOps pattern implemented in this project, with exact file locations and descriptions.
+This document explains every software design pattern and cloud computing pattern implemented in this project, with exact file locations and descriptions.
 
 ---
 
@@ -15,7 +15,7 @@ This document explains every software design pattern and cloud computing / DevOp
 | File | Description |
 |------|-------------|
 | `src/lib/realtime/RealtimeManager.ts` | **Primary implementation.** The `RealtimeManager` is the Subject. It maintains `eventObservers`, `presenceObservers`, and `statusObservers` Maps. Components register via `subscribeToEvents()` and `subscribeToPresence()`. When a broadcast event arrives from Supabase Realtime, the `notifyEventObservers()` method iterates through all registered observers and calls their callbacks. |
-| `src/app/room/[code]/page.tsx` | **Observer registration.** The room page registers as an observer for notifications (`'notifications'` observer) and participant list updates (`'participants'` observer). It receives events like `whiteboard-opened`, `participant-joined`, `participant-left`, `background-changed`, etc. |
+| `src/app/room/[code]/page.tsx` | **Observer registration.** The room page registers as an observer for notifications (`'notifications'` observer) and participant list updates (`'participants'` observer). It receives events like `whiteboard-opened`, `participant-joined`, `participant-left`, `background-changed`. |
 | `src/components/room/Whiteboard.tsx` | **Observer registration.** The whiteboard registers as an observer (`'whiteboard'` observer) to receive remote draw commands from other users. |
 
 **How it works in the app:**
@@ -102,14 +102,13 @@ This document explains every software design pattern and cloud computing / DevOp
 | File | Description |
 |------|-------------|
 | `src/lib/supabase/client.ts` | The Supabase browser client is a Singleton. The `createClient()` function checks if a client instance already exists; if so, it returns the existing one. This prevents creating multiple GoTrue/Realtime WebSocket connections. |
-| `src/lib/audio/SoundFactory.ts` | The `AudioContext` is a Singleton via the `getAudioContext()` function. Only one AudioContext is created for the entire app lifetime. |
-| `src/lib/metrics.ts` | The Prometheus metrics `Registry` is a Singleton. A single shared registry instance holds all metric collectors, ensuring consistent metric values across the application. |
+| `src/lib/audio/SoundFactory.ts` | The `AudioContext` is a Singleton via the `getAudioContext()` function. Only one AudioContext is created per app lifetime to avoid resource exhaustion and browser restrictions. |
 
 ---
 
 ### 6. 📝 Command Pattern
 
-**What it is:** A behavioral pattern that turns a request into a stand-alone object containing all information about the request. Commands can be queued, logged, and transmitted.
+**What it is:** A behavioral pattern that turns a request into a stand-alone object containing all information about the request. Commands can be queued, logged, and transmitted over a network.
 
 **Where it's implemented:**
 
@@ -120,95 +119,39 @@ This document explains every software design pattern and cloud computing / DevOp
 
 ---
 
-## Cloud Computing & DevOps Patterns
+## Cloud Computing Patterns
 
-### 7. 🐳 Containerization (Docker)
+### 7. ☁️ Serverless Architecture
 
-**What it is:** A DevOps practice of packaging an application and all its dependencies into a lightweight, portable container image. Containers ensure the app runs identically in any environment — development, staging, production.
+**What it is:** An execution model where the cloud provider completely manages the infrastructure. Resources are dynamically provisioned on-demand, scale automatically, and developers strictly focus on application code.
 
 **Where it's implemented:**
 
 | File | Description |
 |------|-------------|
-| `Dockerfile` | **Multi-stage build** with three stages: (1) `deps` installs production dependencies, (2) `builder` compiles the Next.js app with `next build`, (3) `runner` creates a minimal `node:20-alpine` image with only the standalone output. Runs as a non-root `nextjs` user for security. Includes a `HEALTHCHECK` directive for container orchestration. |
-| `.dockerignore` | Excludes `node_modules`, `.next`, `.env*`, `*.tsbuildinfo`, and other unnecessary files from the Docker build context, keeping the image small. |
-| `next.config.js` | Sets `output: 'standalone'` so Next.js produces a self-contained server bundle optimized for Docker. |
+| Vercel Deployment | The frontend is deployed statically and via Edge functions to Vercel's global CDN, requiring no traditional "server" management. It strictly scales automatically around traffic demands. |
+| Supabase (PostgreSQL / Auth) | Fully managed backend-as-a-service (BaaS) replacing a traditional backend server API. |
 
 **Key characteristics:**
-- **Multi-stage build** reduces final image size (only production artifacts included)
-- **Non-root user** follows container security best practices
-- **Health check** baked into the image via `HEALTHCHECK` directive targeting `/api/health`
-- **Build args** allow injecting environment variables at build time without baking secrets into layers
+- **Zero infrastructure management** — developers don't manage VMs, RAM, or OS patching.
+- **Pay-as-you-go** consumption.
+- **High Availability** naturally built into edge nodes globally.
 
 ---
 
-### 8. ☸️ Container Orchestration (Kubernetes)
+### 8. 📡 Event-Driven Architecture
 
-**What it is:** A cloud pattern for automating deployment, scaling, and management of containerized applications. Kubernetes (K8s) ensures high availability, self-healing, load balancing, and rolling updates.
+**What it is:** A cloud design paradigm where program flow is determined by events — messages published to a channel and consumed by subscribers (Pub/Sub). Producers and consumers are completely decoupled.
 
 **Where it's implemented:**
 
 | File | Description |
 |------|-------------|
-| `k8s/namespace.yaml` | Creates an isolated `focus-rooms` namespace for all application resources. |
-| `k8s/deployment.yaml` | Defines the Deployment with **2 replicas** for high availability. Includes **liveness and readiness probes** hitting `/api/health`, resource requests/limits, and Prometheus scrape annotations. |
-| `k8s/service.yaml` | ClusterIP Service that load-balances traffic across pods internally. |
-| `k8s/ingress.yaml` | AWS ALB Ingress Controller that routes external internet traffic to the service, with HTTPS redirect and health check configuration. |
-| `k8s/hpa.yaml` | HorizontalPodAutoscaler that automatically scales between **2–5 replicas** when CPU utilization exceeds 70%. |
-| `k8s/configmap.yaml` | Non-sensitive environment configuration (`NODE_ENV`, `PORT`). |
-| `k8s/secret.yaml` | Kubernetes Secret template for Supabase credentials (base64-encoded). |
+| `src/lib/realtime/RealtimeManager.ts` | Uses Supabase Realtime **Broadcast** (Pub/Sub) to send and receive events across all connected clients in a room. Publishers call `broadcastEvent()`. Subscribers register via `subscribeToEvents()`. |
+| `src/app/room/[code]/page.tsx` | **Event Producer + Consumer:** Publishes `participant-joined`, `participant-left`, `whiteboard-opened`, `background-changed`. Consumes events to show notifications and update UI state. |
+| `src/components/room/Whiteboard.tsx` | **Event Producer + Consumer:** Publishes `whiteboard-draw` commands and subscribes to remote draw events to replay them on the local canvas. |
 
-**Key characteristics:**
-- **Self-healing:** If a pod fails its liveness probe, K8s restarts it automatically
-- **Auto-scaling:** HPA scales pods horizontally based on real CPU demand
-- **Rolling updates:** New deployments are rolled out with zero downtime
-- **Service discovery:** Pods are accessed via stable DNS names, not IP addresses
-- **Secrets management:** Sensitive values stored in K8s Secrets, not in code
-
----
-
-### 9. 📊 Monitoring & Observability (Prometheus + Grafana)
-
-**What it is:** A DevOps/cloud pattern for collecting, storing, and visualizing application metrics in real time. Prometheus **scrapes** metrics endpoints, stores time-series data, and Grafana **visualizes** it through dashboards.
-
-**Where it's implemented:**
-
-| File | Description |
-|------|-------------|
-| `src/lib/metrics.ts` | **Prometheus metrics registry** (Singleton). Defines custom application metrics: `http_requests_total` (Counter), `http_request_duration_seconds` (Histogram), `active_rooms_total` (Gauge), `active_connections_total` (Gauge), `room_events_total` (Counter). Also collects default Node.js runtime metrics (memory, CPU, event loop). |
-| `src/app/api/metrics/route.ts` | **Metrics endpoint.** Next.js API Route that serves all collected metrics in Prometheus text exposition format at `/api/metrics`. |
-| `src/app/api/health/route.ts` | **Health check endpoint.** Returns application status, uptime, and environment. Used by K8s probes and can be scraped by monitoring. |
-| `src/middleware.ts` | **Request instrumentation.** Records response timing via `X-Response-Time` header for every request passing through middleware. |
-| `k8s/monitoring/prometheus-configmap.yaml` | Prometheus scrape configuration targeting `focus-rooms-service` at `/api/metrics` every 15 seconds. |
-| `k8s/monitoring/prometheus-deployment.yaml` | Prometheus server Deployment + Service in the `monitoring` namespace. Stores 15 days of metric history. |
-| `k8s/monitoring/grafana-deployment.yaml` | Grafana Deployment + LoadBalancer Service. Accessible externally for dashboard viewing. |
-| `k8s/monitoring/grafana-datasource-configmap.yaml` | Auto-provisions Prometheus as Grafana's default data source on startup. |
-
-**Metrics exposed:**
-| Metric | Type | Description |
-|--------|------|-------------|
-| `http_requests_total` | Counter | Total HTTP requests by method, path, status |
-| `http_request_duration_seconds` | Histogram | Request latency distribution |
-| `active_rooms_total` | Gauge | Currently active rooms |
-| `active_connections_total` | Gauge | Active realtime connections |
-| `room_events_total` | Counter | Room lifecycle events (join, leave, etc.) |
-| `nodejs_*` | Various | Default Node.js runtime metrics |
-
----
-
-### 10. 📡 Event-Driven Architecture
-
-**What it is:** A cloud design paradigm where the flow of the program is determined by events — messages published to channels and consumed by subscribers. This is a Pub/Sub (Publish/Subscribe) model.
-
-**Where it's implemented:**
-
-| File | Description |
-|------|-------------|
-| `src/lib/realtime/RealtimeManager.ts` | Uses Supabase Realtime **Broadcast** (Pub/Sub) to send and receive events. Publishers call `broadcastEvent()` to emit events. Subscribers receive events via the `on('broadcast', ...)` listener. |
-| `src/app/room/[code]/page.tsx` | **Event Producer:** Publishes events like `whiteboard-opened`, `participant-joined`, `background-changed`. **Event Consumer:** Subscribes to events and reacts (shows notifications, updates UI). |
-| `src/components/room/Whiteboard.tsx` | **Event Producer + Consumer:** Publishes `whiteboard-draw` events and subscribes to remote draw events. |
-
-**Event types in the system:**
+**Event types flowing through the system:**
 - `whiteboard-opened` / `whiteboard-closed`
 - `mic-toggled`
 - `participant-joined` / `participant-left`
@@ -216,7 +159,7 @@ This document explains every software design pattern and cloud computing / DevOp
 - `whiteboard-draw`
 - `atmosphere-changed`
 
-**Key characteristic:** Producers and consumers are completely decoupled. A user sharing their screen doesn't need to know which components will react to it. The Supabase Realtime channel acts as the event bus.
+**Key characteristic:** The producer (e.g., user drawing on whiteboard) has zero knowledge of who is consuming its events. The Supabase Realtime channel acts as the event bus — any number of clients can subscribe and react independently.
 
 ---
 
@@ -228,9 +171,7 @@ This document explains every software design pattern and cloud computing / DevOp
 | 2 | Factory | Software — Creational | `SoundFactory.ts`, `AudioPanel.tsx` |
 | 3 | Strategy | Software — Behavioral | `ThemeStrategy.ts`, `ThemeSwitcher.tsx`, `ThemeProvider.tsx` |
 | 4 | Repository | Software — Structural | `RoomRepository.ts`, `UserRepository.ts`, `NoteRepository.ts`, `WhiteboardRepository.ts` |
-| 5 | Singleton | Software — Creational | `supabase/client.ts`, `SoundFactory.ts`, `metrics.ts` |
+| 5 | Singleton | Software — Creational | `supabase/client.ts`, `SoundFactory.ts` |
 | 6 | Command | Software — Behavioral | `Whiteboard.tsx`, `types/index.ts` |
-| 7 | Containerization (Docker) | DevOps / Cloud | `Dockerfile`, `.dockerignore`, `next.config.js` |
-| 8 | Container Orchestration (K8s) | DevOps / Cloud | `k8s/deployment.yaml`, `k8s/service.yaml`, `k8s/ingress.yaml`, `k8s/hpa.yaml` |
-| 9 | Monitoring & Observability | DevOps / Cloud | `metrics.ts`, `api/metrics/route.ts`, `k8s/monitoring/*` |
-| 10 | Event-Driven Architecture | Cloud Architecture | `RealtimeManager.ts`, Supabase Realtime Broadcast |
+| 7 | Serverless Architecture | Cloud | Vercel, Supabase Platform |
+| 8 | Event-Driven Architecture | Cloud | `RealtimeManager.ts`, Supabase Realtime Broadcast |

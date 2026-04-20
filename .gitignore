@@ -29,9 +29,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (secrets)
-.env*
-.env.local
+# env files (secrets — never commit)
+.env.*
 !.env.example
 
 # vercel
@@ -43,11 +42,3 @@ yarn-error.log*
 # editor
 .vscode/
 .idea/
-
-# kubernetes secrets (never commit real values)
-k8s/secret.yaml
-k8s/*secret*.yaml
-
-# docker
-.dockerignore
-*.log
