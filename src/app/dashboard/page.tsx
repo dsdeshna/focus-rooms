@@ -282,11 +282,12 @@ export default function DashboardPage() {
                   </div>
                   
                   {editingRoom === room.id ? (
-                    <div className="db-room-edit-row" onClick={e => e.stopPropagation()}>
+                    <div className="db-room-edit-row">
                       <input 
                         type="text" value={editName}
                         onChange={e => setEditName(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleRenameRoom(room.id, e)}
+                        onClick={e => e.stopPropagation()}
                         autoFocus
                         className="db-input db-room-edit-input"
                         disabled={actionLoading}
