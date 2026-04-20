@@ -10,6 +10,21 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
 ];
 
 type WebRTCSignal =
@@ -59,6 +74,7 @@ export class PeerManager {
   connect(): void {
     if (this.channel) return;
 
+    console.log(`[WebRTC] Connecting signaling channel: webrtc:${this.roomCode}`);
     const channel = this.supabase.channel(`webrtc:${this.roomCode}`);
     this.channel = channel;
     this.currentStatus = 'connecting';
@@ -66,54 +82,63 @@ export class PeerManager {
     channel.on('broadcast', { event: 'webrtc-signal' }, ({ payload }: { payload: SignalPayload }) => {
       if (payload.targetUserId === this.userId) {
         this.handleSignal(payload).catch((err) => {
-          console.error('Failed to handle WebRTC signal:', err);
+          console.error('[WebRTC] Signal handling error:', err);
         });
       }
     });
 
     channel.subscribe((status: string) => {
+      console.log(`[WebRTC] Signaling status: ${status}`);
       if (status === 'SUBSCRIBED') {
         this.currentStatus = 'connected';
-        const toFlush = [...this.pendingSignals];
-        this.pendingSignals = [];
-        toFlush.forEach(({ targetUserId, signal }) => this.sendSignal(targetUserId, signal));
+        if (this.pendingSignals.length > 0) {
+          console.log(`[WebRTC] Flushing ${this.pendingSignals.length} pending signals`);
+          const toFlush = [...this.pendingSignals];
+          this.pendingSignals = [];
+          toFlush.forEach(({ targetUserId, signal }) => this.sendSignal(targetUserId, signal));
+        }
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         this.currentStatus = 'errored';
-      } else if (status === 'CLOSED') {
-        this.currentStatus = 'disconnected';
       }
     });
   }
 
   /** Toggle microphone */
   async toggleMic(enable: boolean): Promise<MediaStream | null> {
+    console.log(`[WebRTC] Toggling mic: ${enable ? 'ON' : 'OFF'}`);
+    
     if (enable) {
       try {
-        this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Add audio track to all existing peers and RENEGOTIATE
+        this.localStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          } 
+        });
+
+        // Update all existing peers
         for (const [peerId, pc] of Array.from(this.peers.entries())) {
-          this.localStream?.getAudioTracks().forEach((track) => {
-            pc.addTrack(track, this.localStream!);
-          });
+          this.addLocalStreamToPeer(pc);
           await this.negotiate(peerId, pc);
         }
         return this.localStream;
-      } catch (err: unknown) {
-        console.error('Failed to get mic:', err);
-        throw new Error(err instanceof Error ? err.message : 'Microphone access denied');
+      } catch (err: any) {
+        console.error('[WebRTC] Microphone access error:', err);
+        throw new Error(err.message || 'Microphone access denied');
       }
     } else {
       if (this.localStream) {
         this.localStream.getTracks().forEach((t) => t.stop());
         
-        // Remove track from peers and renegotiate
+        // Remove tracks from all peers
         for (const [peerId, pc] of Array.from(this.peers.entries())) {
           pc.getSenders().forEach(sender => {
-             if (sender.track?.kind === 'audio') {
-               pc.removeTrack(sender);
-             }
+            if (sender.track?.kind === 'audio') {
+              pc.removeTrack(sender);
+            }
           });
-          await this.negotiate(peerId, pc);
+          await this.negotiate(peerId, pc).catch(e => console.warn(`[WebRTC] Renegotiation after mute failed for ${peerId}:`, e));
         }
         this.localStream = null;
       }
@@ -121,26 +146,39 @@ export class PeerManager {
     }
   }
 
+  private addLocalStreamToPeer(pc: RTCPeerConnection) {
+    if (!this.localStream) return;
+    
+    const tracks = this.localStream.getAudioTracks();
+    tracks.forEach((track) => {
+      // Check if track is already being sent to prevent duplicates
+      const alreadyExists = pc.getSenders().some(s => s.track === track);
+      if (!alreadyExists) {
+        pc.addTrack(track, this.localStream!);
+      }
+    });
+  }
+
   /** Create a peer connection for a remote user */
   async createPeerConnection(remoteUserId: string, initiator: boolean): Promise<void> {
-    if (this.peers.has(remoteUserId)) return;
+    if (this.peers.has(remoteUserId)) {
+      console.log(`[WebRTC] Peer ${remoteUserId} already exists, skipping creation.`);
+      return;
+    }
 
+    console.log(`[WebRTC] Creating connection to ${remoteUserId} (initiator: ${initiator})`);
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     this.peers.set(remoteUserId, pc);
 
     // Add local tracks if available
-    if (this.localStream) {
-      this.localStream.getTracks().forEach((track) => {
-        pc.addTrack(track, this.localStream!);
-      });
-    }
+    this.addLocalStreamToPeer(pc);
 
     // Handle incoming remote tracks
     pc.ontrack = (event) => {
       const stream = event.streams[0];
       if (!stream) return;
-      const type = 'audio';
-      this.onRemoteStream(remoteUserId, stream, type);
+      console.log(`[WebRTC] Received remote audio stream from ${remoteUserId}`);
+      this.onRemoteStream(remoteUserId, stream, 'audio');
     };
 
     // Send ICE candidates via Supabase signaling
@@ -154,9 +192,14 @@ export class PeerManager {
     };
 
     pc.onconnectionstatechange = () => {
+      console.log(`[WebRTC] Connection state with ${remoteUserId}: ${pc.connectionState}`);
       if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
         this.removePeer(remoteUserId);
       }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log(`[WebRTC] ICE state with ${remoteUserId}: ${pc.iceConnectionState}`);
     };
 
     // If initiator, create and send offer
@@ -169,6 +212,7 @@ export class PeerManager {
   removePeer(userId: string): void {
     const pc = this.peers.get(userId);
     if (pc) {
+      console.log(`[WebRTC] Removing peer ${userId}`);
       pc.close();
       this.peers.delete(userId);
       this.makingOffer.delete(userId);
@@ -179,18 +223,24 @@ export class PeerManager {
   }
 
   private async negotiate(remoteUserId: string, pc: RTCPeerConnection): Promise<void> {
-    if (pc.signalingState !== 'stable' || this.makingOffer.has(remoteUserId)) return;
+    if (this.makingOffer.has(remoteUserId)) return;
 
     try {
       this.makingOffer.add(remoteUserId);
+      console.log(`[WebRTC] Negotiating with ${remoteUserId}...`);
+      
       const offer = await pc.createOffer();
+      if (pc.signalingState !== 'stable') {
+        // If we are in the middle of receiving an offer, don't try to send one yet
+        return;
+      }
+      
       await pc.setLocalDescription(offer);
-
       if (pc.localDescription) {
         this.sendSignal(remoteUserId, { type: 'offer', sdp: pc.localDescription.toJSON() });
       }
     } catch (err) {
-      console.error('WebRTC negotiation failed:', err);
+      console.error(`[WebRTC] Negotiation failed for ${remoteUserId}:`, err);
     } finally {
       this.makingOffer.delete(remoteUserId);
     }
@@ -206,7 +256,11 @@ export class PeerManager {
 
     this.pendingIceCandidates.delete(remoteUserId);
     for (const candidate of candidates) {
-      await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.warn(`[WebRTC] Failed to add ICE candidate for ${remoteUserId}:`, e);
+      }
     }
   }
 
@@ -215,6 +269,7 @@ export class PeerManager {
     const { fromUserId, signal } = payload;
 
     if (signal.type === 'offer') {
+      console.log(`[WebRTC] Received offer from ${fromUserId}`);
       await this.createPeerConnection(fromUserId, false);
       const pc = this.peers.get(fromUserId);
       if (!pc) return;
@@ -223,6 +278,7 @@ export class PeerManager {
       const ignoreOffer = offerCollision && !this.isPolitePeer(fromUserId);
 
       if (ignoreOffer) {
+        console.warn(`[WebRTC] Ignoring offer collision from ${fromUserId} (impolite)`);
         this.ignoredOffers.add(fromUserId);
         return;
       }
@@ -230,6 +286,7 @@ export class PeerManager {
       this.ignoredOffers.delete(fromUserId);
 
       if (offerCollision) {
+        console.log(`[WebRTC] Rolling back due to collision with ${fromUserId}`);
         await pc.setLocalDescription({ type: 'rollback' });
       }
 
@@ -242,11 +299,12 @@ export class PeerManager {
         this.sendSignal(fromUserId, { type: 'answer', sdp: pc.localDescription.toJSON() });
       }
     } else if (signal.type === 'answer') {
+      console.log(`[WebRTC] Received answer from ${fromUserId}`);
       const pc = this.peers.get(fromUserId);
       if (!pc) return;
 
       if (pc.signalingState !== 'have-local-offer') {
-        console.warn(`Ignored stale WebRTC answer from ${fromUserId} while ${pc.signalingState}.`);
+        console.warn(`[WebRTC] Ignored stale answer from ${fromUserId} while ${pc.signalingState}`);
         return;
       }
 
@@ -261,7 +319,11 @@ export class PeerManager {
         pending.push(signal.candidate);
         this.pendingIceCandidates.set(fromUserId, pending);
       } else {
-        await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+        } catch (e) {
+          console.warn(`[WebRTC] Failed to add ICE candidate from ${fromUserId}:`, e);
+        }
       }
     }
   }
@@ -281,19 +343,15 @@ export class PeerManager {
         targetUserId,
         signal,
       },
-    }).then((status) => {
-      if (status !== 'ok') {
-        console.error('Failed to send WebRTC signal:', status);
-        this.pendingSignals.push({ targetUserId, signal });
-      }
     }).catch((err) => {
-      console.error('Failed to send WebRTC signal:', err);
+      console.error('[WebRTC] Signaling broadcast failed:', err);
       this.pendingSignals.push({ targetUserId, signal });
     });
   }
 
   /** Disconnect everything */
   disconnect(): void {
+    console.log('[WebRTC] Disconnecting PeerManager...');
     this.peers.forEach((pc) => pc.close());
     this.peers.clear();
     this.makingOffer.clear();

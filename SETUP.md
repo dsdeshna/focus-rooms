@@ -1,73 +1,107 @@
-# 🔧 Focus Rooms Setup Guide 
+# 🚀 Complete Step-by-Step Deployment Guide: Focus Rooms
 
-This file is a more heavily expanded subset of the deployment sequence found in the `README.md`. Use this if you are managing the complete pipeline and need to establish everything step-by-step manually! 
-
-We utilize a **Serverless frontend** hosted on **Vercel** and deploy the database and realtime logic entirely to **Supabase Backend API**. Both platforms offer generous free tiers perfect for student projects.
+This guide assumes **zero prior knowledge**. Follow these steps exactly, one by one, to get Focus Rooms live on the internet using Supabase (Backend) and Vercel (Frontend).
 
 ---
 
-## Step 1: Initialize Database Infrastructure (Supabase)
+## Part 1: Setting up the Backend (Supabase)
 
-Supabase runs the PostgreSQL Database, the Authentication (managing Google OAuth and Email), and Realtime WebSocket Broadcast logic natively. 
+Supabase handles your database, user accounts, and real-time features.
 
-1. Head directly to [Supabase](https://supabase.com). It requires no credit card.
-2. Hit **"New Project"**. Name it `Focus Rooms`. Select a region close to where you live. Add a strong master password (you likely won't need to use the raw password itself again).
-3. Wait about 3 minutes for databases to provision and become interactive. 
-4. Head into your dashboard, click on **SQL Editor** on the left menu (it looks like a terminal block `< />`).
-5. Open `supabase-schema.sql` found locally within this repository. **Copy the entire script** into the empty query box and click the **Run** button. 
-    > *What did this do? Have a look at your Table Editor! The entire set of Tables (Users, Rooms, Whiteboards) and Row Level Security permissions are now live.*
-6. Open your Supabase **Project Settings** (Cog wheel bottom left) and click **API**. You will see:
-   * **Project URL**
-   * **Project API Keys** (You want `anon`, the public key, NOT the secret one!).
-
----
-
-## Step 2: Establish Your Environment Locally
-
-Because Focus Rooms interacts with servers, it requires knowledge of where to route its data. This occurs through `.env` environment files which securely bypass uploading sensitive variables back up to GitHub.
-
-1. Ensure you have run `npm install`.
-2. Locate `.env.example` in the main folder. Duplicate this file and rename the new copy to **`.env.local`**. 
-3. Paste the URL and Anon Key into the text file correctly resembling this structure:
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://nxyxxxxxxxxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1Ni...
-```
-
-You are now entirely equipped to develop locally handling live production data!
-**Type `npm run dev` in your terminal to begin developing your application!**
+1.  **Create an Account:**
+    *   Go to [Supabase.com](https://supabase.com).
+    *   Click **Start your project** or **Sign Up**. You can use your GitHub account to sign in easily.
+2.  **Create a Project:**
+    *   Once logged in, click **New Project**.
+    *   Select an **Organization** (usually your name).
+    *   **Name:** `Focus Rooms`
+    *   **Database Password:** Click **Generate a password**. **IMPORTANT:** Copy this password and save it somewhere safe (like a Note app).
+    *   **Region:** Choose the one closest to you (e.g., *Mumbai* if you are in India).
+    *   **Pricing Plan:** Keep it on the **Free** tier.
+    *   Click **Create new project**. Wait 2-3 minutes for it to finish setting up.
+3.  **Run the Database Script:**
+    *   In your Supabase dashboard, look at the left sidebar and click on **SQL Editor** (it looks like `>_`).
+    *   Click **New Query**.
+    *   Go to your project files on your computer and open the file named `supabase-schema.sql`.
+    *   Select all the text inside that file and **Copy** it.
+    *   Go back to the Supabase SQL Editor and **Paste** the text into the query box.
+    *   Click the **Run** button (bottom right). You should see a message saying "Success".
+4.  **Copy your API Keys:**
+    *   On the left sidebar, click the **Settings** cog wheel (bottom left).
+    *   Click on **API**.
+    *   You will see **Project URL**. Copy this URL. You will need it in Part 2.
+    *   Under **Project API Keys**, find the row that says `anon` / `public`. Copy this long string of characters. You will need it in Part 2.
 
 ---
 
-## Step 3: Deployment Pipeline (GitHub & Vercel)
+## Part 2: Local Project Setup
 
-Vercel acts as our Serverless Node.js executor. It's built specifically for Next.js and operates gracefully. 
+Now we prepare the code on your computer to talk to your new Supabase backend.
 
-1. **Commit to GitHub:** First ensure your local project is actively committed to your GitHub account repository. Ensure you never commit your newly instantiated `.env.local` file!
-2. Login to [Vercel](https://vercel.com) using your GitHub account!
-3. Upon entering your dashboard: Click **Add New** → select **Project**.
-4. The screen will query your GitHub account. Select `Import` on your `focus-rooms` repository.
-5. In the final configuration screen before clicking Deploy, click **Environment Variables**. 
-   - Add `NEXT_PUBLIC_SUPABASE_URL` and paste the exact URL from earlier. 
-   - Add `NEXT_PUBLIC_SUPABASE_ANON_KEY` and paste the exact Anon Key from earlier. 
-6. Click **Deploy**.
-
-Vercel will successfully read your `package.json`, compile a Next.js production build, run code optimizations, and spin up a Serverless CDN deployment globally. When finished your dashboard will present you your live `.vercel.app` URL target!
+1.  **Open the Project:**
+    *   Open your code editor (like VS Code) and open the folder containing this project.
+2.  **Install Dependencies:**
+    *   Open your terminal (in VS Code, go to **Terminal -> New Terminal**).
+    *   Type `npm install` and press Enter. Wait for it to finish.
+3.  **Configure Environment Variables:**
+    *   In the file list on the left, find `.env.example`.
+    *   Right-click it and select **Rename**. Rename it to `.env.local`.
+    *   Open `.env.local`.
+    *   Find `NEXT_PUBLIC_SUPABASE_URL=` and paste your **Project URL** after the `=` sign.
+    *   Find `NEXT_PUBLIC_SUPABASE_ANON_KEY=` and paste your **anon / public** key after the `=` sign.
+    *   Save the file (`Ctrl + S` or `Cmd + S`).
+4.  **Test Locally (Optional but Recommended):**
+    *   In the terminal, type `npm run dev`.
+    *   Open your browser and go to `http://localhost:3000`.
+    *   If you see the landing page, everything is working! Stop the server by pressing `Ctrl + C` in the terminal.
 
 ---
 
-## Step 4: Authentication Security Callbacks (Optional Google)
+## Part 3: Deploying to the Cloud (Vercel)
 
-You must tell Supabase which URLs are permitted to send Authentication traffic otherwise malicious fake sites could act as proxy interceptors. 
+Vercel puts your website on the live internet.
 
-1. From Supabase locate the **Authentication** tab -> **URL Configuration**. 
-2. Ensure your new `https://[project].vercel.app` site allows traffic here!
+1.  **Push to GitHub:**
+    *   Go to [GitHub.com](https://github.com) and create a **New Repository**. Name it `focus-rooms`.
+    *   Follow the instructions on GitHub to push your code. If you are using VS Code, use the "Source Control" tab on the left to "Publish to GitHub".
+2.  **Import to Vercel:**
+    *   Go to [Vercel.com](https://vercel.com).
+    *   Sign up/Login using your GitHub account.
+    *   Click **Add New...** -> **Project**.
+    *   You should see your `focus-rooms` repository in the list. Click **Import**.
+3.  **Add Environment Variables to Vercel:**
+    *   Before you click "Deploy", look for the **Environment Variables** section and click it to expand.
+    *   **Name:** `NEXT_PUBLIC_SUPABASE_URL`
+    *   **Value:** Paste your Supabase Project URL.
+    *   Click **Add**.
+    *   **Name:** `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+    *   **Value:** Paste your Supabase `anon` / `public` key.
+    *   Click **Add**.
+4.  **Deploy:**
+    *   Click **Deploy**.
+    *   Wait about 1 minute. Once you see fireworks 🎇, your site is live! Vercel will give you a link (e.g., `https://focus-rooms.vercel.app`).
 
-If implementing Google sign in natively:
-1. Open Google Cloud Platform Console. 
-2. Create an **OAuth App Consent**.
-3. Create new Credentials pulling the ID and Shared Secret. 
-4. Copy the Supabase OAuth redirect URL into Googles Authorized redirect URLs. 
-5. Copy Google's Client ID & Secret back inside Supabase under **Authentication** -> **Providers** -> Google!
+---
 
-🎉 The entirety of the deployment is successfully linked. You can edit the UI, push to GitHub, and Vercel will aggressively redeploy updating in less than 3 minutes.
+## Part 4: Final Authentication Security (Crucial!)
+
+You must tell Supabase that your new Vercel website is allowed to log users in.
+
+1.  **Back to Supabase:**
+    *   Go back to your Supabase Dashboard.
+    *   On the left sidebar, click **Authentication** (the user icon).
+    *   Click on **URL Configuration**.
+    *   In the **Site URL** box, paste your Vercel website link (e.g., `https://focus-rooms-yourname.vercel.app`).
+    *   In the **Redirect URLs** section, click **Add URL**.
+    *   Paste your Vercel link followed by `/auth/callback`. Example: `https://focus-rooms-yourname.vercel.app/auth/callback`.
+    *   Click **Save**.
+
+---
+
+## Troubleshooting FAQ
+
+*   **"I get a 404 error when logging in":** Check Part 4. You probably haven't added your Vercel URL to the Supabase Site URL settings.
+*   **"The whiteboard doesn't sync":** Ensure you ran the SQL script in Part 1, Step 3. That script enables "Realtime" which is required for syncing.
+*   **"My images won't upload":** Profiles are created automatically on signup. If you want to upload background images, you can do so in the Room settings via a URL or by manually creating a "Bucket" in the Supabase **Storage** tab named `backgrounds` and setting it to "Public".
+
+**You are all set! Your collaborative focus room is now ready for the world. 🌸**

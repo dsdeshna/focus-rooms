@@ -125,6 +125,7 @@ export class RealtimeManager {
     if (this.channel) return;
 
     this.updateStatus('connecting');
+    console.log(`[Realtime] Connecting to room:${this.roomCode}...`);
 
     const channel = this.supabase.channel(`room:${this.roomCode}`, {
       config: { presence: { key: userPresence.user_id } },
@@ -135,46 +136,63 @@ export class RealtimeManager {
     channel.on('broadcast', { event: 'room-event' }, (message: unknown) => {
       const event = unwrapBroadcastPayload(message);
       if (!event) {
-        console.warn('Ignored malformed realtime event:', message);
+        console.warn('[Realtime] Ignored malformed event:', message);
         return;
       }
-      // === OBSERVER: Notify ALL registered observers ===
       this.notifyEventObservers(event);
     });
 
     // === EVENT-DRIVEN: Listen for presence changes ===
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState() as Record<string, unknown[]> | null;
-        this.notifyPresenceObservers(normalizePresenceState(state || {}));
-      });
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState() as Record<string, unknown[]> | null;
+      const normalized = normalizePresenceState(state || {});
+      // Presence sync log removed for production cleanliness
+      this.notifyPresenceObservers(normalized);
+    });
 
     channel.subscribe(async (status: string) => {
+      console.log(`[Realtime] Subscription status: ${status}`);
+      
       if (status === 'SUBSCRIBED') {
         this.updateStatus('connected');
-        await channel.track(userPresence);
         
-        // Ensure channel status is officially connected before flushing
-        if (this.channel && this.currentStatus === 'connected') {
-          const toFlush = [...this.pendingBroadcasts];
-          this.pendingBroadcasts = [];
-          toFlush.forEach((ev) => this.broadcastEvent(ev));
+        // Track presence immediately
+        const { error } = await channel.track(userPresence);
+        if (error) {
+          console.error('[Realtime] Failed to track presence:', error);
         } else {
-          // Fallback if state is lagging: flush after a short delay
-          setTimeout(() => {
-            if (this.channel) {
-              const toFlush = [...this.pendingBroadcasts];
-              this.pendingBroadcasts = [];
-              toFlush.forEach((ev) => this.broadcastEvent(ev));
-            }
-          }, 300);
+          console.log('[Realtime] Presence tracked successfully');
         }
-      } else if (status === 'CHANNEL_ERROR') {
-        this.updateStatus('errored');
-      } else if (status === 'TIMED_OUT') {
+        
+        // Flush any broadcasts sent while connecting
+        this.flushPendingBroadcasts();
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error(`[Realtime] Connection failed with status: ${status}`);
         this.updateStatus('errored');
       }
     });
+
+    // Handle visibility change for mobile (re-track when tab becomes active)
+    if (typeof window !== 'undefined') {
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible' && this.channel && this.currentStatus === 'connected') {
+          console.log('[Realtime] Tab visible, updating presence...');
+          this.channel.track(userPresence).catch(err => console.error('[Realtime] Re-track failed:', err));
+        }
+      };
+      window.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+  }
+
+  private flushPendingBroadcasts(): void {
+    if (!this.channel || this.currentStatus !== 'connected') return;
+    
+    if (this.pendingBroadcasts.length > 0) {
+      console.log(`[Realtime] Flushing ${this.pendingBroadcasts.length} pending broadcasts`);
+      const toFlush = [...this.pendingBroadcasts];
+      this.pendingBroadcasts = [];
+      toFlush.forEach((ev) => this.broadcastEvent(ev));
+    }
   }
 
   /**

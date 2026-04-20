@@ -46,6 +46,8 @@ export default function RoomPage() {
   const [participants, setParticipants] = useState<PresenceState[]>([]);
   const [remoteAudioStreams, setRemoteAudioStreams] = useState<Map<string, MediaStream>>(new Map());
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [audioBlocked, setAudioBlocked] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'connected' | 'errored' | 'disconnected'>('disconnected');
 
   // Background
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
@@ -163,6 +165,13 @@ export default function RoomPage() {
           is_mic_on: false,
           is_screen_sharing: false,
           online_at: new Date().toISOString(),
+        });
+
+        realtime.subscribeToStatus('page-status', (status) => {
+          setRealtimeStatus(status);
+          if (status === 'errored') {
+            addNotification('Connection unstable. Retrying...', 'warning');
+          }
         });
 
         realtime.broadcastEvent({
@@ -405,6 +414,99 @@ export default function RoomPage() {
         backgroundAttachment: 'fixed',         
       }}
     >
+      {/* Audio blocking overlay for mobile/strict browsers */}
+      {audioBlocked && (
+        <div className="audio-blocked-overlay">
+          <div className="audio-blocked-card">
+            <Music size={24} className="audio-blocked-icon" />
+            <p>Audio is paused by your browser.</p>
+            <button 
+              onClick={() => {
+                setAudioBlocked(false);
+                // Standard trick to unlock audio on mobile
+                const dummy = new Audio();
+                dummy.play().catch(() => {});
+              }} 
+              className="audio-blocked-btn"
+            >
+              Enable Sound
+            </button>
+          </div>
+          <style>{`
+            .audio-blocked-overlay {
+              position: fixed;
+              inset: 0;
+              background: rgba(0,0,0,0.4);
+              backdrop-filter: blur(8px);
+              z-index: 1000;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              animation: fadeIn 0.4s ease;
+            }
+            .audio-blocked-card {
+              background: var(--color-surface);
+              padding: 2rem;
+              border-radius: 2rem;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 1.2rem;
+              box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+              border: 1px solid var(--color-border);
+              text-align: center;
+              max-width: 280px;
+            }
+            .audio-blocked-icon { color: var(--color-primary); }
+            .audio-blocked-card p {
+              font-family: var(--font-body);
+              font-style: italic;
+              color: var(--color-text);
+              font-size: 0.95rem;
+            }
+            .audio-blocked-btn {
+              padding: 0.8rem 1.6rem;
+              border-radius: 100px;
+              background: var(--color-primary);
+              color: var(--color-text-on-primary);
+              border: none;
+              font-family: var(--font-sans);
+              font-weight: 600;
+              font-size: 0.85rem;
+              cursor: pointer;
+              transition: transform 0.2s;
+            }
+            .audio-blocked-btn:hover { transform: scale(1.05); }
+          `}</style>
+        </div>
+      )}
+
+      {/* Realtime status indicator (Subtle) */}
+      <div className={`status-dot-wrap status-dot--${realtimeStatus}`} title={`Status: ${realtimeStatus}`}>
+        <div className="status-dot" />
+        <style>{`
+          .status-dot-wrap {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            opacity: 0.5;
+            pointer-events: none;
+          }
+          .status-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #ccc;
+          }
+          .status-dot--connected .status-dot { background: #94A89A; box-shadow: 0 0 8px #94A89A; }
+          .status-dot--connecting .status-dot { background: #E8DCC4; animation: blink 1s infinite; }
+          .status-dot--errored .status-dot { background: #D69E9E; }
+          @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        `}</style>
+      </div>
+
       {/* Soft diffusion layer for custom backgrounds */}
       {backgroundUrl && <div className="room-bg-overlay" 
       style={{ opacity: 0.20 }}/>}
@@ -596,7 +698,7 @@ export default function RoomPage() {
 
       {/* Hidden Audio Elements for Remote Streams */}
       {Array.from(remoteAudioStreams.entries()).map(([peerId, stream]) => (
-        <RemoteAudioPlayer key={peerId} stream={stream} />
+        <RemoteAudioPlayer key={peerId} stream={stream} onBlocked={() => setAudioBlocked(true)} />
       ))}
 
       <style>{`
@@ -1017,15 +1119,23 @@ export default function RoomPage() {
   );
 }
 
-// Simple hidden audio renderer
-function RemoteAudioPlayer({ stream }: { stream: MediaStream }) {
+// Hidden audio renderer with autoplay error handling
+function RemoteAudioPlayer({ stream, onBlocked }: { stream: MediaStream; onBlocked: () => void }) {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (audioRef.current && stream) {
       audioRef.current.srcObject = stream;
+      
+      // Attempt to play and catch blocking
+      audioRef.current.play().catch(err => {
+        if (err.name === 'NotAllowedError') {
+          console.warn('[WebRTC] Audio playback blocked by browser policy');
+          onBlocked();
+        }
+      });
     }
-  }, [stream]);
+  }, [stream, onBlocked]);
 
-  return <audio ref={audioRef} autoPlay playsInline hidden />;
+  return <audio ref={audioRef} autoPlay playsInline style={{ display: 'none' }} />;
 }
