@@ -317,7 +317,7 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
                     <input
                       type="range" min="0" max="1" step="0.05"
                       value={sound.volume}
-                      onChange={e => handleVolumeChange(key, parseFloat(e.target.value))}
+                      onChange={e => handleVolumeChange(key, Number.parseFloat(e.target.value))}
                       className="ap-slider"
                     />
                     <span className="ap-slider-val">{Math.round(sound.volume * 100)}%</span>
@@ -351,7 +351,7 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
           <input
             type="range" min="20" max="2000" step="1"
             value={frequency}
-            onChange={e => handleFrequencyChange(parseInt(e.target.value))}
+            onChange={e => handleFrequencyChange(Number.parseInt(e.target.value, 10))}
             className="ap-slider"
           />
           <div className="ap-slider-range-labels">
@@ -398,7 +398,7 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
                     <input
                       type="range" min="0" max="1" step="0.05"
                       value={sound.volume}
-                      onChange={e => handleVolumeChange(key, parseFloat(e.target.value))}
+                      onChange={e => handleVolumeChange(key, Number.parseFloat(e.target.value))}
                       className="ap-slider"
                     />
                   </div>

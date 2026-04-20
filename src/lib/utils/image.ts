@@ -40,7 +40,7 @@ export async function compressImage(dataUrl: string, maxWidth = 1920, quality = 
         resolve(canvas.toDataURL('image/jpeg', quality));
       }
     };
-    img.onerror = (e) => reject(e);
+    img.onerror = () => reject(new Error('Image failed to load'));
     img.src = dataUrl;
   });
 }

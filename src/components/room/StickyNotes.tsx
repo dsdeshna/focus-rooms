@@ -247,6 +247,14 @@ function DraggableNote({
         borderColor: palette.border,
       }}
       onMouseDown={handleMouseDown}
+      role="region"
+      aria-label="Sticky note"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (!isDragging && !isFocused) onDelete(note.id);
+        }
+      }}
     >
       {/* Header */}
       <div className="sn-note-header">

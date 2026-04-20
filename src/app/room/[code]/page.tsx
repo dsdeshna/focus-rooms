@@ -1141,5 +1141,9 @@ function RemoteAudioPlayer({ stream, onBlocked }: { stream: MediaStream; onBlock
     }
   }, [stream, onBlocked]);
 
-  return <audio ref={audioRef} autoPlay playsInline style={{ display: 'none' }} />;
+  return (
+    <audio ref={audioRef} autoPlay style={{ display: 'none' }}>
+      <track kind="captions" />
+    </audio>
+  );
 }

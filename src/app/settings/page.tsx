@@ -148,8 +148,9 @@ export default function SettingsPage() {
           <div className="section-label">✦ &nbsp; profile</div>
 
           <div className="settings-field">
-            <label>display name</label>
+            <label htmlFor="display-name">display name</label>
             <input
+              id="display-name"
               type="text" value={displayName}
               onChange={e => setDisplayName(e.target.value)}
               className="settings-input"
@@ -160,8 +161,9 @@ export default function SettingsPage() {
           <div className="section-sub-label">social links</div>
 
           <div className="settings-field">
-            <label>instagram</label>
+            <label htmlFor="instagram">instagram</label>
             <input
+              id="instagram"
               type="text" value={instagram}
               onChange={e => setInstagram(e.target.value)}
               className="settings-input"
@@ -170,8 +172,9 @@ export default function SettingsPage() {
           </div>
 
           <div className="settings-field">
-            <label>linkedin</label>
+            <label htmlFor="linkedin">linkedin</label>
             <input
+              id="linkedin"
               type="text" value={linkedin}
               onChange={e => setLinkedin(e.target.value)}
               className="settings-input"
@@ -180,8 +183,9 @@ export default function SettingsPage() {
           </div>
 
           <div className="settings-field">
-            <label>github</label>
+            <label htmlFor="github">github</label>
             <input
+              id="github"
               type="text" value={github}
               onChange={e => setGithub(e.target.value)}
               className="settings-input"

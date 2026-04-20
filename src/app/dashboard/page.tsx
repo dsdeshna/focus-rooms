@@ -77,15 +77,15 @@ export default function DashboardPage() {
     } catch { setError('Failed to join room.'); setJoining(false); }
   };
 
-  const handleCopyCode = (code: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCopyCode = (code: string, e?: React.SyntheticEvent) => {
+    e?.stopPropagation();
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(''), 2000);
   };
 
-  const handleRenameRoom = async (roomId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleRenameRoom = async (roomId: string, e?: React.SyntheticEvent) => {
+    e?.stopPropagation();
     if (!editName.trim() || !user) { setEditingRoom(null); return; }
     
     // Check ownership before attempting
@@ -108,8 +108,8 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteRoom = async (roomId: string, roomCode: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteRoom = async (roomId: string, roomCode: string, e?: React.SyntheticEvent) => {
+    e?.stopPropagation();
     if (!user) return;
 
     const room = myRooms.find(r => r.id === roomId);
@@ -167,14 +167,18 @@ export default function DashboardPage() {
         {/* ── Room Action Card ── */}
         <section className="db-action-card">
           {/* Tabs */}
-          <div className="db-tabs">
+          <div className="db-tabs" role="tablist">
             <button
+              role="tab"
+              aria-selected={activeTab === 'create'}
               className={`db-tab ${activeTab === 'create' ? 'db-tab--active' : ''}`}
               onClick={() => setActiveTab('create')}
             >
               🌱 create a room
             </button>
             <button
+              role="tab"
+              aria-selected={activeTab === 'join'}
               className={`db-tab ${activeTab === 'join' ? 'db-tab--active' : ''}`}
               onClick={() => setActiveTab('join')}
             >
@@ -182,9 +186,8 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* Create panel */}
           {activeTab === 'create' && (
-            <div className="db-panel db-panel--create">
+            <div className="db-panel db-panel--create" role="tabpanel">
               <p className="db-panel-desc">give your room a name, and share the code with friends.</p>
               <div className="db-field-row">
                 <input
@@ -206,9 +209,8 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Join panel */}
           {activeTab === 'join' && (
-            <div className="db-panel db-panel--join">
+            <div className="db-panel db-panel--join" role="tabpanel">
               <p className="db-panel-desc">enter a 6-letter code to join a friend's room.</p>
               <div className="db-field-row">
                 <input
@@ -232,7 +234,6 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* ── Your Spaces ── */}
         {myRooms.length > 0 && (
           <section className="db-spaces">
             <div className="db-spaces-header">
@@ -246,6 +247,14 @@ export default function DashboardPage() {
                   key={room.id}
                   className="db-room-card"
                   onClick={() => !editingRoom && router.push(`/room/${room.code}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      if (!editingRoom) router.push(`/room/${room.code}`);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Room ${room.name}`}
                   style={{ animationDelay: `${i * 0.06}s` }}
                 >
                   <div className="db-room-top">
@@ -273,14 +282,13 @@ export default function DashboardPage() {
                   </div>
                   
                   {editingRoom === room.id ? (
-                    <div className="db-room-edit-row">
+                    <div className="db-room-edit-row" onClick={e => e.stopPropagation()}>
                       <input 
                         type="text" value={editName}
                         onChange={e => setEditName(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleRenameRoom(room.id, e as unknown as React.MouseEvent)}
+                        onKeyDown={e => e.key === 'Enter' && handleRenameRoom(room.id, e)}
                         autoFocus
                         className="db-input db-room-edit-input"
-                        onClick={e => e.stopPropagation()}
                         disabled={actionLoading}
                       />
                       <button className="db-room-icon-btn" onClick={e => handleRenameRoom(room.id, e)} disabled={actionLoading}>
@@ -319,7 +327,6 @@ export default function DashboardPage() {
       </main>
 
       <style>{`
-        /* ── ROOT ── */
         .db-root {
           min-height: 100vh;
           background: var(--color-background);
@@ -334,8 +341,6 @@ export default function DashboardPage() {
         }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ── AMBIENT ── */
         .db-ambient {
           position: fixed;
           inset: 0;
@@ -365,8 +370,6 @@ export default function DashboardPage() {
           from { transform: translate(0, 0); }
           to   { transform: translate(4%, 6%); }
         }
-
-        /* ── MAIN ── */
         .db-main {
           position: relative;
           z-index: 1;
@@ -377,8 +380,6 @@ export default function DashboardPage() {
           flex-direction: column;
           gap: 4rem;
         }
-
-        /* ── GREETING ── */
         .db-greeting {
           text-align: center;
           animation: fadeUp 0.7s ease both;
@@ -405,8 +406,6 @@ export default function DashboardPage() {
           color: var(--color-text-muted);
           font-size: 1.05rem;
         }
-
-        /* ── ERROR ── */
         .db-error {
           background: var(--color-danger-bg);
           border: 1px solid var(--color-danger-border);
@@ -418,8 +417,6 @@ export default function DashboardPage() {
           text-align: center;
           animation: fadeUp 0.4s ease both;
         }
-
-        /* ── ACTION CARD ── */
         .db-action-card {
           background: var(--color-surface);
           border: 1px solid var(--color-border);
@@ -428,7 +425,6 @@ export default function DashboardPage() {
           box-shadow: 0 8px 40px -10px var(--color-shadow-lg);
           animation: fadeUp 0.8s 0.1s ease both;
         }
-
         .db-tabs {
           display: flex;
           border-bottom: 1px solid var(--color-border);
@@ -465,7 +461,6 @@ export default function DashboardPage() {
           transform: translateX(-50%) scaleX(1);
         }
         .db-tab:hover { color: var(--color-text); }
-
         .db-panel {
           padding: 2.5rem;
         }
@@ -505,7 +500,6 @@ export default function DashboardPage() {
           font-weight: 500;
           text-transform: uppercase;
         }
-
         .db-btn-primary {
           white-space: nowrap;
           padding: 0.95rem 2rem;
@@ -528,8 +522,6 @@ export default function DashboardPage() {
           box-shadow: 0 8px 25px -5px rgba(148,168,154,0.4);
         }
         .db-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        /* ── SPACES ── */
         .db-spaces {
           animation: fadeUp 0.8s 0.2s ease both;
         }
@@ -552,13 +544,11 @@ export default function DashboardPage() {
           height: 1px;
           background: var(--color-border);
         }
-
         .db-rooms-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
           gap: 1rem;
         }
-
         .db-room-card {
           background: var(--color-surface);
           border: 1px solid var(--color-border);
@@ -586,7 +576,6 @@ export default function DashboardPage() {
           box-shadow: 0 16px 40px -10px var(--color-shadow-lg);
         }
         .db-room-card:hover::before { opacity: 0.4; }
-
         .db-room-top { display: flex; justify-content: space-between; align-items: flex-start; }
         .db-room-actions {
           display: flex; gap: 0.2rem;
@@ -602,7 +591,6 @@ export default function DashboardPage() {
         .db-room-icon-btn:hover { filter: grayscale(0); opacity: 1; transform: scale(1.1); }
         .db-room-edit-row { display: flex; align-items: center; gap: 0.5rem; flex: 1; }
         .db-room-edit-input { padding: 0.4rem 0.8rem; font-size: 0.9rem; flex: 1; }
-
         .db-room-num {
           font-family: var(--font-sans);
           font-size: 0.65rem;
@@ -662,27 +650,6 @@ export default function DashboardPage() {
           background: var(--color-background);
           color: var(--color-text);
         }
-
-        /* New room phantom card */
-        .db-room-card--new {
-          border-style: dashed;
-          background: transparent;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          opacity: 0.4;
-          transition: all 0.3s ease;
-        }
-        .db-room-card--new:hover { opacity: 0.8; }
-        .db-room-card--new::before { display: none; }
-        .db-room-plus {
-          font-size: 1.8rem;
-          color: var(--color-text-muted);
-          line-height: 1;
-        }
-        .db-room-card--new p {
           font-family: var(--font-body);
           font-style: italic;
           font-size: 0.85rem;
