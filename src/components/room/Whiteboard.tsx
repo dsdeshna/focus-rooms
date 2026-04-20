@@ -128,63 +128,84 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
     ctxRef.current = ctx;
   }, []);
 
+  const handleRemoteDraw = useCallback((data: any) => {
+    if (data.from && data.to) {
+      drawSegment(
+        data.from as CanvasPoint,
+        data.to as CanvasPoint,
+        data.color as string,
+        data.brushSize as number
+      );
+    }
+  }, [drawSegment]);
+
+  const handleRemoteSyncRequest = useCallback((data: any) => {
+    const requestId = data.requestId as string | undefined;
+    const requesterConnectionId = data.requesterConnectionId as string | undefined;
+    if (!requestId || !requesterConnectionId || !realtimeManager) return;
+
+    // === HARDENED LEADER ELECTION ===
+    const presences = realtimeManager.getPresences().sort((a, b) => {
+      const timeA = new Date(a.online_at).getTime();
+      const timeB = new Date(b.online_at).getTime();
+      if (timeA !== timeB) return timeA - timeB;
+      return a.connectionId.localeCompare(b.connectionId);
+    });
+    
+    const isLeader = presences[0]?.connectionId === realtimeManager.connectionId;
+    if (!isLeader) return;
+
+    window.setTimeout(() => {
+      broadcastSnapshot(requestId, requesterConnectionId);
+    }, Math.random() * 200 + 50);
+  }, [realtimeManager, broadcastSnapshot]);
+
+  const handleRemoteFullSync = useCallback((data: any) => {
+    if (!realtimeManager) return;
+    const targetConnectionId = data.targetConnectionId as string | undefined;
+    if (targetConnectionId && targetConnectionId !== realtimeManager.connectionId) return;
+
+    const requestId = data.requestId as string | undefined;
+    if (requestId) {
+      if (!pendingSyncRequestsRef.current.has(requestId)) return;
+      pendingSyncRequestsRef.current.delete(requestId);
+    }
+
+    if (data.image) {
+      try {
+        applySnapshot(data.image as string);
+      } catch (err) {
+        console.error('Failed to apply full sync:', err);
+      }
+    }
+  }, [realtimeManager, applySnapshot]);
+
   useEffect(() => {
     if (!realtimeManager) return;
-    realtimeManager.subscribeToEvents('whiteboard', (event: RoomEvent) => {
-      if (event.type !== 'whiteboard-draw') return;
+    const handleWhiteboardEvent = (event: RoomEvent) => {
+      if (event.type !== 'whiteboard-draw' || !realtimeManager) return;
       if (event.connectionId === realtimeManager.connectionId) return;
+      
       const data = event.data;
       if (!data || !ctxRef.current) return;
 
-      if (data.action === 'draw' && data.from && data.to) {
-        drawSegment(
-          data.from as CanvasPoint,
-          data.to as CanvasPoint,
-          data.color as string,
-          data.brushSize as number
-        );
-      } else if (data.action === 'clear') {
-        clearCanvas();
-      } else if (data.action === 'sync-request') {
-        const requestId = data.requestId as string | undefined;
-        const requesterConnectionId = data.requesterConnectionId as string | undefined;
-        if (!requestId || !requesterConnectionId || !realtimeManager) return;
-
-        // === HARDENED LEADER ELECTION ===
-        // 1. Sort by oldest online_at.
-        // 2. Tie-break using connectionId to ensure exactly one leader per room.
-        const presences = realtimeManager.getPresences().sort((a, b) => {
-          const timeA = new Date(a.online_at).getTime();
-          const timeB = new Date(b.online_at).getTime();
-          if (timeA !== timeB) return timeA - timeB;
-          return a.connectionId.localeCompare(b.connectionId);
-        });
-        
-        // Use connectionId to ensure only ONE tab of a user responds if they have multiple open.
-        const isLeader = presences[0]?.connectionId === realtimeManager.connectionId;
-
-        if (isLeader) {
-          window.setTimeout(() => {
-            broadcastSnapshot(requestId, requesterConnectionId);
-          }, Math.random() * 200 + 50);
-        }
-      } else if (data.action === 'full-sync' && data.image) {
-        const targetConnectionId = data.targetConnectionId as string | undefined;
-        if (targetConnectionId && targetConnectionId !== realtimeManager.connectionId) return;
-
-        const requestId = data.requestId as string | undefined;
-        if (requestId) {
-          if (!pendingSyncRequestsRef.current.has(requestId)) return;
-          pendingSyncRequestsRef.current.delete(requestId);
-        }
-
-        try {
-          applySnapshot(data.image as string);
-        } catch (err) {
-          console.error('Failed to apply full sync:', err);
-        }
+      switch (data.action) {
+        case 'draw':
+          handleRemoteDraw(data);
+          break;
+        case 'clear':
+          clearCanvas();
+          break;
+        case 'sync-request':
+          handleRemoteSyncRequest(data);
+          break;
+        case 'full-sync':
+          handleRemoteFullSync(data);
+          break;
       }
-    });
+    };
+
+    realtimeManager.subscribeToEvents('whiteboard', handleWhiteboardEvent);
 
     // Automatically request sync when arriving
     const requestId = `${realtimeManager.connectionId}-${Date.now()}`;
@@ -207,7 +228,9 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
       pendingSyncRequests.delete(requestId);
       realtimeManager.unsubscribeFromEvents('whiteboard');
     };
-  }, [applySnapshot, broadcastSnapshot, clearCanvas, drawSegment, realtimeManager, userId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applySnapshot, broadcastSnapshot, clearCanvas, drawSegment, realtimeManager, userId, handleRemoteDraw, handleRemoteSyncRequest, handleRemoteFullSync]);
+
 
   const getCanvasPoint = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

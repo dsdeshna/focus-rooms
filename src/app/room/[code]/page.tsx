@@ -59,17 +59,68 @@ export default function RoomPage() {
 
   // Notification helper
   const addNotification = useCallback((message: string, type: 'info' | 'warning' | 'success' = 'info') => {
-    const notif: Notification = {
-      id: Date.now().toString(),
-      message,
-      type,
-      timestamp: Date.now(),
-    };
+    const id = Date.now().toString();
+    const notif: Notification = { id, message, type, timestamp: Date.now() };
     setNotifications((prev) => [...prev, notif]);
-    setTimeout(() => {
-      setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
-    }, 5000);
+    setTimeout(() => removeNotification(id), 5000);
   }, []);
+
+  const removeNotification = useCallback((id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const handlePeerStream = useCallback((peerId: string, stream: MediaStream, type: string) => {
+    if (type === 'audio') {
+      setRemoteAudioStreams((prev) => new Map(prev).set(peerId, stream));
+    }
+  }, []);
+
+  const handlePeerStreamRemoved = useCallback((peerId: string, type: string) => {
+    if (type === 'audio') {
+      setRemoteAudioStreams((prev) => {
+        const next = new Map(prev);
+        next.delete(peerId);
+        return next;
+      });
+    }
+  }, []);
+
+  const handleRoomEvent = useCallback((event: RoomEvent) => {
+    if (!realtimeRef.current || event.connectionId === realtimeRef.current.connectionId) return;
+    
+    switch (event.type) {
+      case 'whiteboard-opened': 
+        addNotification(`${event.userName} opened whiteboard`, 'info'); 
+        break;
+      case 'participant-joined':
+        addNotification(`${event.userName} arrived`, 'info');
+        if (peerRef.current) {
+          peerRef.current.createPeerConnection(event.userId, true).catch(console.error);
+        }
+        break;
+      case 'participant-left':
+        addNotification(`${event.userName} left`, 'warning');
+        setParticipants((prev) => prev.filter(p => p.user_id !== event.userId));
+        if (peerRef.current) peerRef.current.removePeer(event.userId);
+        break;
+      case 'background-changed':
+        if (event.data?.backgroundUrl !== undefined) {
+          setBackgroundUrl(event.data.backgroundUrl as string | null);
+        }
+        break;
+    }
+  }, [addNotification]);
+
+  const handlePresenceSync = useCallback((presences: PresenceState[]) => {
+    setParticipants(presences);
+  }, []);
+
+  const handleRealtimeStatus = useCallback((status: any) => {
+    setRealtimeStatus(status);
+    if (status === 'errored') {
+      addNotification('Connection unstable. Retrying...', 'warning');
+    }
+  }, [addNotification]);
 
   // Initialize room
   useEffect(() => {
@@ -107,56 +158,16 @@ export default function RoomPage() {
         if (!isMounted) return;
 
         // Initialize Peer Manager BEFORE subscribing to realtime so it's ready for the offer
-        const peer = new PeerManager(
-          code,
-          user.id,
-          (peerId, stream, type) => {
-            if (type === 'audio') {
-              setRemoteAudioStreams((prev) => new Map(prev).set(peerId, stream));
-            }
-          },
-          (peerId, type) => {
-            if (type === 'audio') {
-              setRemoteAudioStreams((prev) => {
-                const next = new Map(prev);
-                next.delete(peerId);
-                return next;
-              });
-            }
-          }
-        );
+        const peer = new PeerManager(code, user.id, handlePeerStream, handlePeerStreamRemoved);
         peer.connect();
         peerRef.current = peer;
 
         const realtime = new RealtimeManager(code);
         realtimeRef.current = realtime;
 
-        realtime.subscribeToEvents('notifications', (event: RoomEvent) => {
-          if (event.connectionId === realtime.connectionId) return;
-          switch (event.type) {
-            case 'whiteboard-opened': addNotification(`${event.userName} opened whiteboard`, 'info'); break;
-            case 'participant-joined':
-              addNotification(`${event.userName} arrived`, 'info');
-              if (peerRef.current) {
-                peerRef.current.createPeerConnection(event.userId, true).catch(console.error);
-              }
-              break;
-            case 'participant-left':
-              addNotification(`${event.userName} left`, 'warning');
-              setParticipants((prev) => prev.filter(p => p.user_id !== event.userId));
-              if (peerRef.current) peerRef.current.removePeer(event.userId);
-              break;
-            case 'background-changed':
-              if (event.data?.backgroundUrl !== undefined) {
-                setBackgroundUrl(event.data.backgroundUrl as string | null);
-              }
-              break;
-          }
-        });
-
-        realtime.subscribeToPresence('participants', (presences: PresenceState[]) => {
-          setParticipants(presences);
-        });
+        realtime.subscribeToEvents('notifications', handleRoomEvent);
+        realtime.subscribeToPresence('participants', handlePresenceSync);
+        realtime.subscribeToStatus('page-status', handleRealtimeStatus);
 
         realtime.connect({
           user_id: user.id,
@@ -165,13 +176,6 @@ export default function RoomPage() {
           is_mic_on: false,
           is_screen_sharing: false,
           online_at: new Date().toISOString(),
-        });
-
-        realtime.subscribeToStatus('page-status', (status) => {
-          setRealtimeStatus(status);
-          if (status === 'errored') {
-            addNotification('Connection unstable. Retrying...', 'warning');
-          }
         });
 
         realtime.broadcastEvent({
@@ -199,7 +203,7 @@ export default function RoomPage() {
       if (peerRef.current) { peerRef.current.disconnect(); peerRef.current = null; }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code]);
+  }, [code, handlePeerStream, handlePeerStreamRemoved, handleRoomEvent, handlePresenceSync, handleRealtimeStatus]);
 
   const leaveRoom = async () => {
     if (realtimeRef.current && userId && userName) {

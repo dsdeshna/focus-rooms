@@ -1,12 +1,10 @@
-// ============================================================
-// === STRATEGY PATTERN IMPLEMENTED HERE ===
+// STRATEGY PATTERN IMPLEMENTED HERE
 // Each color theme has both a light and dark variant.
 // The ThemeContext holds the current strategy + mode.
-// ============================================================
 
 import { Theme } from '@/types';
 
-// Base themes — each has light mode colors. Dark variants are auto-generated.
+// Base themes — each has light mode colors and dark.
 const baseThemes: Record<string, { name: string; emoji: string; light: Theme['colors']; dark: Theme['colors'] }> = {
   'lavender-dream': {
     name: 'Lavender Dream',

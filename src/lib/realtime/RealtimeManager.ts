@@ -1,6 +1,5 @@
-// ============================================================
-// === OBSERVER PATTERN IMPLEMENTED HERE ===
-// === EVENT-DRIVEN ARCHITECTURE (CLOUD PATTERN) ===
+// OBSERVER PATTERN IMPLEMENTED HERE
+// EVENT-DRIVEN ARCHITECTURE (CLOUD PATTERN)
 // Explanation: The RealtimeManager is the Subject in the Observer
 // Pattern. It subscribes to a Supabase Realtime channel (which uses
 // Pub/Sub under the hood — the Event-Driven Cloud Pattern) and
@@ -10,7 +9,6 @@
 // callback. When any participant broadcasts an event (screen share,
 // whiteboard update, mic toggle, etc.), ALL observers are notified.
 // This decouples event producers from consumers.
-// ============================================================
 
 import { createClient } from '@/lib/supabase/client';
 import { RoomEvent, PresenceState } from '@/types';
@@ -69,7 +67,7 @@ export class RealtimeManager {
   private currentStatus: 'connecting' | 'connected' | 'errored' | 'disconnected' = 'disconnected';
   public readonly connectionId: string;
 
-  // === OBSERVER: List of registered observer callbacks ===
+  // OBSERVER: List of registered observer callbacks
   private eventObservers: Map<string, EventObserver> = new Map();
   private presenceObservers: Map<string, PresenceObserver> = new Map();
   private statusObservers: Map<string, StatusObserver> = new Map();
@@ -80,7 +78,7 @@ export class RealtimeManager {
   }
 
   /**
-   * === OBSERVER PATTERN: subscribe() — Register an observer ===
+   * OBSERVER PATTERN: subscribe() — Register an observer
    * Components call this to receive real-time event notifications.
    */
   subscribeToEvents(observerId: string, callback: EventObserver): void {
@@ -88,7 +86,7 @@ export class RealtimeManager {
   }
 
   /**
-   * === OBSERVER PATTERN: unsubscribe() — Remove an observer ===
+   * OBSERVER PATTERN: unsubscribe() — Remove an observer
    */
   unsubscribeFromEvents(observerId: string): void {
     this.eventObservers.delete(observerId);
@@ -118,7 +116,7 @@ export class RealtimeManager {
   }
 
   /**
-   * === EVENT-DRIVEN ARCHITECTURE: Connect to the room channel ===
+   * EVENT-DRIVEN ARCHITECTURE: Connect to the room channel
    * Uses Supabase Realtime Broadcast (Pub/Sub under the hood)
    */
   connect(userPresence: PresenceState): void {
@@ -132,7 +130,7 @@ export class RealtimeManager {
     });
     this.channel = channel;
 
-    // === EVENT-DRIVEN: Listen for broadcast events (Pub/Sub) ===
+    // EVENT-DRIVEN: Listen for broadcast events (Pub/Sub)
     channel.on('broadcast', { event: 'room-event' }, (message: unknown) => {
       const event = unwrapBroadcastPayload(message);
       if (!event) {
@@ -142,7 +140,7 @@ export class RealtimeManager {
       this.notifyEventObservers(event);
     });
 
-    // === EVENT-DRIVEN: Listen for presence changes ===
+    // EVENT-DRIVEN: Listen for presence changes
     channel.on('presence', { event: 'sync' }, () => {
       const state = channel.presenceState() as Record<string, unknown[]> | null;
       const normalized = normalizePresenceState(state || {});
@@ -196,7 +194,7 @@ export class RealtimeManager {
   }
 
   /**
-   * === EVENT-DRIVEN: Broadcast an event to all subscribers ===
+   * EVENT-DRIVEN: Broadcast an event to all subscribers
    * This is the "publish" side of Pub/Sub.
    */
   broadcastEvent(event: RoomEvent): void {
@@ -269,7 +267,7 @@ export class RealtimeManager {
   }
 
   /**
-   * === OBSERVER: Notify all event observers ===
+   * OBSERVER: Notify all event observers
    * This is the "notify" method of the Observer Pattern.
    */
   private notifyEventObservers(event: RoomEvent): void {
@@ -283,7 +281,7 @@ export class RealtimeManager {
   }
 
   /**
-   * === OBSERVER: Notify all presence observers ===
+   * OBSERVER: Notify all presence observers
    */
   private notifyPresenceObservers(presences: PresenceState[]): void {
     this.presenceObservers.forEach((callback) => {

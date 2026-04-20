@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { SoundFactory, FrequencyGenerator } from '@/lib/audio/SoundFactory';
 import { SoundGenerator, NoiseType, AmbientType, RoomEvent } from '@/types';
 import { RealtimeManager } from '@/lib/realtime/RealtimeManager';
@@ -57,51 +57,77 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
   const [freqActive, setFreqActive] = useState(false);
   const freqGenRef = useRef<FrequencyGenerator | null>(null);
 
+  const handleAtmosphereEvent = useCallback((data: any) => {
+    const { action, soundType, key, volume, freq } = data;
+    
+    switch (action) {
+      case 'toggle-noise':
+        if (soundType) syncToggleNoise(soundType as NoiseType);
+        break;
+      case 'toggle-ambient':
+        if (soundType) syncToggleAmbient(soundType as AmbientType);
+        break;
+      case 'volume-change':
+        if (key && typeof volume === 'number') syncVolumeChange(key, volume);
+        break;
+      case 'toggle-freq':
+        syncToggleFreq();
+        break;
+      case 'freq-change':
+        if (typeof freq === 'number') syncFreqChange(freq);
+        break;
+    }
+  }, []);
+
+  const handleSyncRequestInternal = useCallback(() => {
+    if (!realtimeManager) return;
+    
+    // Share current atmosphere state with new joiner (Leader Pattern)
+    const presences = realtimeManager.getPresences().sort((a, b) => 
+      new Date(a.online_at).getTime() - new Date(b.online_at).getTime()
+    );
+    
+    if (presences[0]?.user_id !== userId) return;
+
+    activeSounds.forEach((val, key) => {
+      const [type, sound] = key.split('-');
+      realtimeManager.broadcastEvent({
+        type: 'atmosphere-changed', userId, userName,
+        data: { action: type === 'noise' ? 'toggle-noise' : 'toggle-ambient', soundType: sound, volume: val.volume },
+        timestamp: Date.now()
+      });
+    });
+
+    if (freqActive) {
+      realtimeManager.broadcastEvent({ 
+        type: 'atmosphere-changed', userId, userName, 
+        data: { action: 'toggle-freq', freq: frequency }, 
+        timestamp: Date.now() 
+      });
+    }
+  }, [realtimeManager, userId, userName, activeSounds, freqActive, frequency]);
+
   // === OBSERVER PATTERN: Sync atmosphere across participants ===
   useEffect(() => {
     if (!realtimeManager) return;
 
-    const cleanup = realtimeManager.subscribeToEvents('audio-sync', (event: RoomEvent) => {
-      if (event.connectionId === realtimeManager.connectionId) return;
+    const handleAudioSyncEvent = (event: RoomEvent) => {
+      if (!realtimeManager || event.connectionId === realtimeManager.connectionId) return;
 
       if (event.type === 'atmosphere-changed' && event.data) {
-        const { action, soundType, key, volume, freq } = event.data as any;
-        
-        if (action === 'toggle-noise' && soundType) {
-          syncToggleNoise(soundType as NoiseType);
-        } else if (action === 'toggle-ambient' && soundType) {
-          syncToggleAmbient(soundType as AmbientType);
-        } else if (action === 'volume-change' && key && typeof volume === 'number') {
-          syncVolumeChange(key, volume);
-        } else if (action === 'toggle-freq') {
-          syncToggleFreq();
-        } else if (action === 'freq-change' && typeof freq === 'number') {
-          syncFreqChange(freq);
-        }
+        handleAtmosphereEvent(event.data);
       } else if (event.type === 'whiteboard-draw' && event.data?.action === 'sync-request') {
-        // Share current atmosphere state with new joiner (Leader Pattern)
-        const presences = realtimeManager.getPresences().sort((a, b) => 
-          new Date(a.online_at).getTime() - new Date(b.online_at).getTime()
-        );
-        if (presences[0]?.user_id === userId) {
-          activeSounds.forEach((val, key) => {
-            const [type, sound] = key.split('-');
-            realtimeManager.broadcastEvent({
-              type: 'atmosphere-changed', userId, userName,
-              data: { action: type === 'noise' ? 'toggle-noise' : 'toggle-ambient', soundType: sound, volume: val.volume },
-              timestamp: Date.now()
-            });
-          });
-          if (freqActive) {
-            realtimeManager.broadcastEvent({ type: 'atmosphere-changed', userId, userName, data: { action: 'toggle-freq', freq: frequency }, timestamp: Date.now() });
-          }
-        }
+        handleSyncRequestInternal();
       }
-    });
+    };
 
-    return () => { realtimeManager.unsubscribeFromEvents('audio-sync'); };
+    const cleanup = realtimeManager.subscribeToEvents('audio-sync', handleAudioSyncEvent);
+
+    return () => { 
+      realtimeManager.unsubscribeFromEvents('audio-sync'); 
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [realtimeManager, userId, activeSounds, freqActive, frequency]);
+  }, [realtimeManager, userId, activeSounds, freqActive, frequency, handleAtmosphereEvent, handleSyncRequestInternal]);
 
   const syncToggleNoise = (type: NoiseType) => {
     try { toggleNoiseInternal(type, false); } catch (e) { console.error(e); }

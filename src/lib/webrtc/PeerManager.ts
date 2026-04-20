@@ -1,8 +1,6 @@
-// ============================================================
 // WebRTC Peer Manager
 // Handles peer-to-peer connections for mic audio.
 // Uses Supabase Realtime Broadcast for signaling (SDP & ICE exchange).
-// ============================================================
 
 import { createClient } from '@/lib/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -268,65 +266,82 @@ export class PeerManager {
   private async handleSignal(payload: SignalPayload): Promise<void> {
     const { fromUserId, signal } = payload;
 
-    if (signal.type === 'offer') {
-      console.log(`[WebRTC] Received offer from ${fromUserId}`);
-      await this.createPeerConnection(fromUserId, false);
-      const pc = this.peers.get(fromUserId);
-      if (!pc) return;
+    switch (signal.type) {
+      case 'offer':
+        await this.handleOffer(fromUserId, signal.sdp);
+        break;
+      case 'answer':
+        await this.handleAnswer(fromUserId, signal.sdp);
+        break;
+      case 'ice-candidate':
+        await this.handleIceCandidate(fromUserId, signal.candidate);
+        break;
+    }
+  }
 
-      const offerCollision = pc.signalingState !== 'stable' || this.makingOffer.has(fromUserId);
-      const ignoreOffer = offerCollision && !this.isPolitePeer(fromUserId);
+  private async handleOffer(fromUserId: string, sdp: RTCSessionDescriptionInit): Promise<void> {
+    console.log(`[WebRTC] Received offer from ${fromUserId}`);
+    await this.createPeerConnection(fromUserId, false);
+    const pc = this.peers.get(fromUserId);
+    if (!pc) return;
 
-      if (ignoreOffer) {
-        console.warn(`[WebRTC] Ignoring offer collision from ${fromUserId} (impolite)`);
-        this.ignoredOffers.add(fromUserId);
-        return;
-      }
+    const offerCollision = pc.signalingState !== 'stable' || this.makingOffer.has(fromUserId);
+    const ignoreOffer = offerCollision && !this.isPolitePeer(fromUserId);
 
-      this.ignoredOffers.delete(fromUserId);
+    if (ignoreOffer) {
+      console.warn(`[WebRTC] Ignoring offer collision from ${fromUserId} (impolite)`);
+      this.ignoredOffers.add(fromUserId);
+      return;
+    }
 
-      if (offerCollision) {
-        console.log(`[WebRTC] Rolling back due to collision with ${fromUserId}`);
-        await pc.setLocalDescription({ type: 'rollback' });
-      }
+    this.ignoredOffers.delete(fromUserId);
 
-      await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-      await this.flushPendingIceCandidates(fromUserId, pc);
+    if (offerCollision) {
+      console.log(`[WebRTC] Rolling back due to collision with ${fromUserId}`);
+      await pc.setLocalDescription({ type: 'rollback' });
+    }
 
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      if (pc.localDescription) {
-        this.sendSignal(fromUserId, { type: 'answer', sdp: pc.localDescription.toJSON() });
-      }
-    } else if (signal.type === 'answer') {
-      console.log(`[WebRTC] Received answer from ${fromUserId}`);
-      const pc = this.peers.get(fromUserId);
-      if (!pc) return;
+    await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    await this.flushPendingIceCandidates(fromUserId, pc);
 
-      if (pc.signalingState !== 'have-local-offer') {
-        console.warn(`[WebRTC] Ignored stale answer from ${fromUserId} while ${pc.signalingState}`);
-        return;
-      }
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    if (pc.localDescription) {
+      this.sendSignal(fromUserId, { type: 'answer', sdp: pc.localDescription.toJSON() });
+    }
+  }
 
-      await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
-      await this.flushPendingIceCandidates(fromUserId, pc);
-    } else if (signal.type === 'ice-candidate') {
-      const pc = this.peers.get(fromUserId);
-      if (!pc || !signal.candidate || this.ignoredOffers.has(fromUserId)) return;
+  private async handleAnswer(fromUserId: string, sdp: RTCSessionDescriptionInit): Promise<void> {
+    console.log(`[WebRTC] Received answer from ${fromUserId}`);
+    const pc = this.peers.get(fromUserId);
+    if (!pc) return;
 
-      if (!pc.remoteDescription) {
-        const pending = this.pendingIceCandidates.get(fromUserId) || [];
-        pending.push(signal.candidate);
-        this.pendingIceCandidates.set(fromUserId, pending);
-      } else {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-        } catch (e) {
-          console.warn(`[WebRTC] Failed to add ICE candidate from ${fromUserId}:`, e);
-        }
+    if (pc.signalingState !== 'have-local-offer') {
+      console.warn(`[WebRTC] Ignored stale answer from ${fromUserId} while ${pc.signalingState}`);
+      return;
+    }
+
+    await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    await this.flushPendingIceCandidates(fromUserId, pc);
+  }
+
+  private async handleIceCandidate(fromUserId: string, candidate: RTCIceCandidateInit): Promise<void> {
+    const pc = this.peers.get(fromUserId);
+    if (!pc || !candidate || this.ignoredOffers.has(fromUserId)) return;
+
+    if (!pc.remoteDescription) {
+      const pending = this.pendingIceCandidates.get(fromUserId) || [];
+      pending.push(candidate);
+      this.pendingIceCandidates.set(fromUserId, pending);
+    } else {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.warn(`[WebRTC] Failed to add ICE candidate from ${fromUserId}:`, e);
       }
     }
   }
+
 
   /** Send a signaling message via Supabase Broadcast */
   private sendSignal(targetUserId: string, signal: WebRTCSignal): void {
