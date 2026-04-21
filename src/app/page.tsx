@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
-import { Pencil } from 'lucide-react';
 
 export default function LandingPage() {
   const router = useRouter();
