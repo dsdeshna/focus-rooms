@@ -213,34 +213,27 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
   const handleAtmosphereEvent = useCallback((data: any) => {
     const { action, soundType, key, volume, freq } = data;
     
+    // Helper to reduce cognitive complexity of set-state
+    const handleSetState = () => {
+      if (data.sounds && Array.isArray(data.sounds)) {
+        data.sounds.forEach((s: any) => {
+          if (s.type === 'noise') syncToggleNoise(s.soundType, s.volume, true);
+          else if (s.type === 'ambient') syncToggleAmbient(s.soundType, s.volume, true);
+        });
+      }
+      if (typeof data.freqActive === 'boolean') {
+        if (data.freqActive) syncFreqChange(data.frequency || 432, true);
+        else if (freqActive) syncToggleFreq();
+      }
+    };
+
     switch (action) {
-      case 'set-state':
-        if (data.sounds && Array.isArray(data.sounds)) {
-          data.sounds.forEach((s: any) => {
-            if (s.type === 'noise') syncToggleNoise(s.soundType, s.volume, true);
-            else if (s.type === 'ambient') syncToggleAmbient(s.soundType, s.volume, true);
-          });
-        }
-        if (typeof data.freqActive === 'boolean') {
-          if (data.freqActive) syncFreqChange(data.frequency || 432, true);
-          else if (freqActive) syncToggleFreq();
-        }
-        break;
-      case 'toggle-noise':
-        if (soundType) syncToggleNoise(soundType as NoiseType);
-        break;
-      case 'toggle-ambient':
-        if (soundType) syncToggleAmbient(soundType as AmbientType);
-        break;
-      case 'volume-change':
-        if (key && typeof volume === 'number') syncVolumeChange(key, volume);
-        break;
-      case 'toggle-freq':
-        syncToggleFreq();
-        break;
-      case 'freq-change':
-        if (typeof freq === 'number') syncFreqChange(freq);
-        break;
+      case 'set-state':     handleSetState(); break;
+      case 'toggle-noise':   if (soundType) syncToggleNoise(soundType as NoiseType); break;
+      case 'toggle-ambient': if (soundType) syncToggleAmbient(soundType as AmbientType); break;
+      case 'volume-change':  if (key && typeof volume === 'number') syncVolumeChange(key, volume); break;
+      case 'toggle-freq':    syncToggleFreq(); break;
+      case 'freq-change':    if (typeof freq === 'number') syncFreqChange(freq); break;
     }
   }, [freqActive, syncToggleNoise, syncToggleAmbient, syncVolumeChange, syncToggleFreq, syncFreqChange]);
 

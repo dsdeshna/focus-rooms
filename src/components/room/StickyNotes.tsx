@@ -278,6 +278,17 @@ function DraggableNote({
         placeholder="write something small…"
       />
 
+      {/* Bottom drag handle — fixes the "hidden handle" issue */}
+      <button 
+        className="sn-drag-footer" 
+        onMouseDown={handleDragStart}
+        aria-label="Drag from bottom"
+        tabIndex={-1}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
+        <div className="sn-drag-dots" />
+      </button>
+
       <style>{`
         .sn-note {
           position: absolute;
@@ -302,6 +313,27 @@ function DraggableNote({
         .sn-note--dragging {
           box-shadow: 0 16px 40px -8px rgba(100,90,80,0.25);
           transform: rotate(1deg);
+        }
+
+        .sn-drag-footer {
+          height: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          border: none;
+          padding: 0;
+          margin-top: -0.2rem;
+          opacity: 0.3;
+          transition: opacity 0.2s;
+        }
+        .sn-drag-footer:hover { opacity: 0.8; }
+        .sn-drag-dots {
+          width: 20px;
+          height: 3px;
+          border-radius: 2px;
+          background: currentColor;
+          opacity: 0.4;
         }
         .sn-note--focused {
           box-shadow: 0 8px 28px -6px rgba(100,90,80,0.18);
