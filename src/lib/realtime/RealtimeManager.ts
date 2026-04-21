@@ -224,7 +224,7 @@ export class RealtimeManager {
    */
   async updatePresence(updates: Partial<PresenceState>): Promise<void> {
     if (!this.channel) return;
-    await this.channel.track(updates as PresenceState);
+    await this.channel.track({ ...updates, connectionId: this.connectionId } as PresenceState);
   }
 
   /**
