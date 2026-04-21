@@ -33,9 +33,9 @@ class WhiteNoiseGenerator implements SoundGenerator {
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
-    // White noise: pure random values
+    // White noise: random values
     for (let i = 0; i < bufferSize; i++) {
-      data[i] = cryptoRandom() * 2 - 1;
+      data[i] = Math.random() * 2 - 1;
     }
 
     this.source = ctx.createBufferSource();
@@ -94,7 +94,7 @@ class PinkNoiseGenerator implements SoundGenerator {
     // Pink noise using Paul Kellet's refined method
     let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
     for (let i = 0; i < bufferSize; i++) {
-      const white = cryptoRandom() * 2 - 1;
+      const white = Math.random() * 2 - 1;
       b0 = 0.99886 * b0 + white * 0.0555179;
       b1 = 0.99332 * b1 + white * 0.0750759;
       b2 = 0.969   * b2 + white * 0.153852;
@@ -161,7 +161,7 @@ class BrownNoiseGenerator implements SoundGenerator {
     // Brown noise: integrated white noise
     let lastOut = 0;
     for (let i = 0; i < bufferSize; i++) {
-      const white = cryptoRandom() * 2 - 1;
+      const white = Math.random() * 2 - 1;
       data[i] = (lastOut + 0.02 * white) / 1.02;
       lastOut = data[i];
       data[i] *= 3.5; // amplify

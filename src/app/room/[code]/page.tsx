@@ -218,8 +218,8 @@ export default function RoomPage() {
   const handleToggleMic = async () => {
     try {
       const newState = !isMicOn;
-      if (peerRef.current) await peerRef.current.toggleMic(newState);
       setIsMicOn(newState);
+      if (peerRef.current) await peerRef.current.toggleMic(newState);
       if (realtimeRef.current) {
         await realtimeRef.current.updatePresence({
           user_id: userId,

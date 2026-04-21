@@ -179,7 +179,7 @@ export function StickyNotes({ roomId, userId, onClose }: StickyNotesProps) {
   );
 }
 
-// ── Draggable Note ──────────────────────────────────────────────
+// Draggable Note
 const NOTE_PALETTES = [
   { bg: '#FFF9EC', border: '#F0E8CC' },  // warm cream
   { bg: '#F0F5F0', border: '#D8E8D8' },  // sage
@@ -208,6 +208,7 @@ function DraggableNote({
   const palette = NOTE_PALETTES[index % NOTE_PALETTES.length];
 
   const handleDragStart = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     setIsDragging(true);
     dragOffset.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
@@ -232,7 +233,7 @@ function DraggableNote({
 
   return (
     <section
-      className={`sn-note pointer-events-auto ${isDragging ? 'sn-note--dragging' : ''} ${isFocused ? 'sn-note--focused' : ''}`}
+      className={`sn-note ${isDragging ? 'sn-note--dragging' : ''} ${isFocused ? 'sn-note--focused' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
@@ -292,6 +293,7 @@ function DraggableNote({
           animation: noteIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
           transition: box-shadow 0.3s ease;
           user-select: none;
+          pointer-events: auto;
         }
         @keyframes noteIn {
           from { opacity: 0; transform: scale(0.9) rotate(-2deg); }
