@@ -10,26 +10,25 @@ export function cn(...inputs: ClassValue[]) {
  * Returns a value between 0 (inclusive) and 1 (exclusive),
  */
 export function cryptoRandom(): number {
-  try {
-    const array = new Uint32Array(1);
-    if (typeof window !== 'undefined' && window.crypto) {
-      window.crypto.getRandomValues(array);
+  const array = new Uint32Array(1);
+  
+  if (typeof window !== 'undefined' && window.crypto) {
+    window.crypto.getRandomValues(array);
+  } else {
+    // Server-side / Node.js
+    const crypto = require('crypto');
+    // In Node 14.17.0+ and Node 15+, webcrypto is preferred
+    const webcrypto = crypto.webcrypto;
+    if (webcrypto && webcrypto.getRandomValues) {
+      webcrypto.getRandomValues(array);
     } else {
-      // Server-side / Node.js fallback
-      const { webcrypto } = require('crypto');
-      if (webcrypto) {
-        webcrypto.getRandomValues(array);
-      } else {
-        // Older node versions fallback
-        const { randomInt } = require('crypto');
-        return randomInt(0, 0xFFFFFFFF) / (0xFFFFFFFF + 1);
-      }
+      // Fallback for older Node environments (still CSPRNG)
+      const randomInt = crypto.randomInt;
+      return randomInt(0, 0xFFFFFFFF) / (0xFFFFFFFF + 1);
     }
-    return array[0] / (0xFFFFFFFF + 1);
-  } catch (err) {
-    // Ultimate fallback (not CSPRNG but prevents crash)
-    return Math.random();
   }
+  
+  return array[0] / (0xFFFFFFFF + 1);
 }
 
 /**
