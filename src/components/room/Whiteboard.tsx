@@ -56,6 +56,7 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
   const lastBroadcastRef = useRef<number>(0);
   const lastBroadcastPointRef = useRef<{ x: number; y: number } | null>(null);
   const pendingSyncRequestsRef = useRef<Set<string>>(new Set());
+  const syncChunksRef = useRef<Map<string, string[]>>(new Map());
   const whiteboardRepo = new WhiteboardRepository();
   const isCustomColor = !COLOR_PRESETS.some(({ hex }) => hex.toLowerCase() === color.toLowerCase());
 
@@ -97,18 +98,26 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
 
     try {
       const image = canvas.toDataURL('image/webp', 0.55);
-      realtimeManager.broadcastEvent({
-        type: 'whiteboard-draw',
-        userId,
-        userName: '',
-        data: {
-          action: 'full-sync',
-          requestId,
-          targetConnectionId,
-          image,
-        },
-        timestamp: Date.now(),
-      });
+      const chunkSize = 150000; // 150KB chunks to safely bypass Supabase 256KB limits
+      const totalChunks = Math.ceil(image.length / chunkSize);
+      
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = image.slice(i * chunkSize, (i + 1) * chunkSize);
+        realtimeManager.broadcastEvent({
+          type: 'whiteboard-draw',
+          userId,
+          userName: '',
+          data: {
+            action: 'full-sync-chunk',
+            requestId,
+            targetConnectionId,
+            chunk,
+            index: i,
+            totalChunks,
+          },
+          timestamp: Date.now(),
+        });
+      }
     } catch (err) {
       console.error('Failed to create whiteboard sync snapshot:', err);
     }
@@ -160,23 +169,32 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
     }, cryptoRandom() * 200 + 50);
   }, [realtimeManager, broadcastSnapshot]);
 
-  const handleRemoteFullSync = useCallback((data: any) => {
+  const handleRemoteFullSyncChunk = useCallback((data: any) => {
     if (!realtimeManager) return;
     const targetConnectionId = data.targetConnectionId as string | undefined;
     if (targetConnectionId && targetConnectionId !== realtimeManager.connectionId) return;
 
     const requestId = data.requestId as string | undefined;
-    if (requestId) {
-      if (!pendingSyncRequestsRef.current.has(requestId)) return;
-      pendingSyncRequestsRef.current.delete(requestId);
-    }
+    if (!requestId || !pendingSyncRequestsRef.current.has(requestId)) return;
 
-    if (data.image) {
+    let chunks = syncChunksRef.current.get(requestId);
+    if (!chunks) {
+      chunks = new Array(data.totalChunks).fill(null);
+      syncChunksRef.current.set(requestId, chunks);
+    }
+    
+    chunks[data.index] = data.chunk;
+    
+    if (chunks.every(Boolean)) {
+      const fullImage = chunks.join('');
       try {
-        applySnapshot(data.image as string);
+        applySnapshot(fullImage);
       } catch (err) {
-        console.error('Failed to apply full sync:', err);
+        console.error('Failed to apply full sync from chunks:', err);
       }
+      
+      pendingSyncRequestsRef.current.delete(requestId);
+      syncChunksRef.current.delete(requestId);
     }
   }, [realtimeManager, applySnapshot]);
 
@@ -200,7 +218,10 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
           handleRemoteSyncRequest(data);
           break;
         case 'full-sync':
-          handleRemoteFullSync(data);
+          // Legacy payload, ignored
+          break;
+        case 'full-sync-chunk':
+          handleRemoteFullSyncChunk(data);
           break;
       }
     };
@@ -229,7 +250,7 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
       realtimeManager.unsubscribeFromEvents('whiteboard');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applySnapshot, broadcastSnapshot, clearCanvas, drawSegment, realtimeManager, userId, handleRemoteDraw, handleRemoteSyncRequest, handleRemoteFullSync]);
+  }, [applySnapshot, broadcastSnapshot, clearCanvas, drawSegment, realtimeManager, userId, handleRemoteDraw, handleRemoteSyncRequest, handleRemoteFullSyncChunk]);
 
 
   const getCanvasPoint = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
