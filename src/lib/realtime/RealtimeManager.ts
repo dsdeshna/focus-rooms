@@ -176,7 +176,7 @@ export class RealtimeManager {
           this.channel.track(userPresence).catch(err => console.error('[Realtime] Re-track failed:', err));
         }
       };
-      window.addEventListener('visibilitychange', handleVisibilityChange);
+      globalThis.addEventListener('visibilitychange', handleVisibilityChange);
     }
   }
 

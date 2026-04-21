@@ -10,8 +10,8 @@ export function cn(...inputs: ClassValue[]) {
  * Returns a value between 0 (inclusive) and 1 (exclusive),
  */
 export function cryptoRandom(): number {
-  if (typeof window !== 'undefined') {
-    const crypto = window.crypto || (window as any).msCrypto;
+  if (typeof globalThis !== 'undefined') {
+    const crypto = globalThis.crypto || (globalThis as any).msCrypto;
     if (crypto && crypto.getRandomValues) {
       const array = new Uint32Array(1);
       crypto.getRandomValues(array);

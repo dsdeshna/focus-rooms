@@ -224,9 +224,9 @@ function DraggableNote({
       setIsDragging(false);
       onUpdatePosition(note.id, position.x, position.y);
     };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    globalThis.addEventListener('mousemove', onMove);
+    globalThis.addEventListener('mouseup', onUp);
+    return () => { globalThis.removeEventListener('mousemove', onMove); globalThis.removeEventListener('mouseup', onUp); };
   }, [isDragging, note.id, position.x, position.y, onUpdatePosition]);
 
   const handleContentChange = (content: string) => {

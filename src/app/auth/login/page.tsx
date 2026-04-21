@@ -35,7 +35,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setError('');
     try {
-      const { error: authError } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback` } });
+      const { error: authError } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${globalThis.location.origin}/auth/callback` } });
       if (authError) setError('Failed to initiate Google sign-in.');
     } catch { setError('Google sign-in failed.'); }
   };
@@ -47,7 +47,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       // Pass the next parameter so that the callback redirects the user to the settings page where they can enter their new password
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/auth/callback?next=/settings` });
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${globalThis.location.origin}/auth/callback?next=/settings` });
       if (resetError) { setError(resetError.message); setLoading(false); return; }
       setResetSent(true);
     } catch { setError('Failed to send reset email.'); } finally { setLoading(false); }

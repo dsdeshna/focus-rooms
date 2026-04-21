@@ -155,7 +155,7 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
     const isLeader = presences[0]?.connectionId === realtimeManager.connectionId;
     if (!isLeader) return;
 
-    window.setTimeout(() => {
+    globalThis.setTimeout(() => {
       broadcastSnapshot(requestId, requesterConnectionId);
     }, cryptoRandom() * 200 + 50);
   }, [realtimeManager, broadcastSnapshot]);
@@ -211,7 +211,7 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
     const requestId = `${realtimeManager.connectionId}-${Date.now()}`;
     const pendingSyncRequests = pendingSyncRequestsRef.current;
     pendingSyncRequests.add(requestId);
-    const timeoutId = window.setTimeout(() => {
+    const timeoutId = globalThis.setTimeout(() => {
       realtimeManager.broadcastEvent({
         type: 'whiteboard-draw', userId, userName: '',
         data: {
@@ -224,7 +224,7 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
     }, 1500);
 
     return () => {
-      window.clearTimeout(timeoutId);
+      globalThis.clearTimeout(timeoutId);
       pendingSyncRequests.delete(requestId);
       realtimeManager.unsubscribeFromEvents('whiteboard');
     };
