@@ -1,11 +1,10 @@
-// FACTORY PATTERN IMPLEMENTED HERE
-// Explanation: SoundFactory is a Factory that creates different
+// Sound Factory
+// SoundFactory is a Factory that creates different
 // SoundGenerator objects based on the requested type.
 // Each noise type (white, pink, brown) and ambient sound is a
 // different product, but they all implement the same SoundGenerator
 // interface. The Factory encapsulates the creation logic so the
 // client code doesn't need to know which specific class to instantiate.
-
 import { SoundGenerator, NoiseType, AmbientType } from '@/types';
 import { cryptoRandom } from '@/lib/utils';
 
@@ -318,14 +317,8 @@ class AmbientSoundPlayer implements SoundGenerator {
   }
 }
 
-// FACTORY: Creates the appropriate SoundGenerator
-
 export class SoundFactory {
-  /**
-   * FACTORY METHOD
-   * Creates a SoundGenerator based on the requested type.
-   * The client doesn't need to know which concrete class to use.
-   */
+  /** Create a noise generator for the given type. */
   static createNoise(type: NoiseType): SoundGenerator {
     switch (type) {
       case 'white':

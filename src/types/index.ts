@@ -86,7 +86,7 @@ export interface SoundGenerator {
   getType(): string;
 }
 
-// OBSERVER PATTERN — Event Types
+// === OBSERVER PATTERN — Event Types ===
 export type RoomEventType =
   | 'screen-share-started'
   | 'screen-share-stopped'

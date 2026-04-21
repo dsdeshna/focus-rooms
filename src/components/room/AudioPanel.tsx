@@ -1,10 +1,8 @@
-// ============================================================
-// === FACTORY PATTERN USAGE ===
+// Audio Panel (Factory pattern)
 // This component uses SoundFactory to create different sound
 // generators. The UI doesn't know which concrete class is
 // instantiated — it just calls SoundFactory.createNoise() or
 // SoundFactory.createAmbient() and gets back a SoundGenerator.
-// ============================================================
 
 'use client';
 
@@ -107,7 +105,7 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
     }
   }, [realtimeManager, userId, userName, activeSounds, freqActive, frequency]);
 
-  // === OBSERVER PATTERN: Sync atmosphere across participants ===
+  // Sync atmosphere state across participants
   useEffect(() => {
     if (!realtimeManager) return;
 

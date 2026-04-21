@@ -1,4 +1,4 @@
-// REPOSITORY PATTERN IMPLEMENTED HERE
+// Room Repository
 // RoomRepository abstracts all database operations
 // for the "rooms" table behind a clean interface. The rest of the
 // app never directly calls Supabase queries for rooms — it always

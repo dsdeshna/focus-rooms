@@ -1,78 +1,109 @@
-# focus rooms
+# Focus Rooms
 
-A collaborative digital sanctuary designed for deep work, creative flow, and quiet connection. focus rooms blends a dreamy, minimalist aesthetic with robust real-time features to create a space where you can focus together, apart.
+**A real-time collaborative workspace built for deep focus and creative flow.**
 
-Built for the **Cloud Computing** and **Software Design Patterns** courses, this application explores the intersection of serverless architecture and elegant code design.
+Focus Rooms is a full-stack web application that allows people to study/focus together by including ambient sound design, shared whiteboards, peer-to-peer voice communication, and real-time presence, along with the interface inspired by the soft, editorial aesthetic of platforms like Pinterest and Tumblr.
 
----
-
-## the experience
-
-focus rooms is defined by its atmospheric approach to productivity. every detail—from the soft pastel palettes to the gentle curves of the interface—is curated to reduce digital noise.
-
-### 🌿 atmospheric audio
-- **Noise Generators**: Pure white, pink, and brown noise synthesized via the Web Audio API.
-- **Ambient Soundscapes**: Evocative loops of rain, forest murmurs, and café bustle.
-- **Frequency Tuner**: A tunable oscillator (20Hz–2000Hz) for custom sonic grounding.
-
-### 🎨 creative collaboration
-- **Shared Whiteboard**: A real-time canvas for brainstorming, sketching, and visual thinking.
-- **Snapshots**: Export your whiteboard as a PNG to preserve the flow of ideas.
-- **Sticky Notes**: Personal, translucent notes that stay visible only to you—perfect for private to-do lists.
-
-### 🐚 seamless connection
-- **Voice & Screen**: High-fidelity peer-to-peer communication powered by WebRTC.
-- **Presence**: Knowing who is with you in the room, with subtle indicators for activity.
-- **Personalization**: Choose from 8 curated themes—from *Lavender Dream* to *Midnight Muse*—to match your mood.
+This project was built as a practical exploration of **6 Software Design Patterns** and **2 Cloud Computing Architectures**, to help the project be maintainable, scalable, and genuinely pleasant to use.
 
 ---
 
-## the architecture
+## What It Does
 
-The technical foundation of focus rooms is built on modern "serverless" principles, ensuring scalability and real-time responsiveness without the overhead of traditional server management.
+At its core, Focus Rooms lets you create private, shareable rooms where you and your friends or teammates can focus together in real time. It's not a meeting tool, it's a _space_. You join, you settle in, and you work.
 
-| layer | choice | rationale |
-| :--- | :--- | :--- |
-| **frontend** | Next.js & TypeScript | Type-safe, edge-ready, and performant. |
-| **styling** | Tailwind & Custom CSS | Soft glassmorphism and fluid animations. |
-| **database** | Supabase (Postgres) | Reliable relational storage with powerful Auth. |
-| **real-time** | Supabase Realtime | low-latency Pub/Sub for whiteboard and presence. |
-| **media** | WebRTC | P2P mesh for voice and screen sharing. |
+### Atmospheric Audio Engine
 
----
+The audio system is built entirely on the **Web Audio API**, generating noise programmatically rather than streaming static files. You get:
 
-## blueprints & patterns
+- **White, Pink, and Brown noise generators** — synthesized in real time using cryptographically seeded buffers.
+- **Ambient soundscapes** — Rain, Forest, Café, Ocean, Fireplace, and Wind loops for environmental immersion.
+- **A frequency tuner** — A sine-wave oscillator tunable from 20Hz to 2000Hz, with preset slots for common Solfeggio frequencies (432Hz, 528Hz, etc.).
+- **Synchronized atmosphere** — When one person changes the soundscape, everyone in the room hears it. The audio state is broadcast in real time using Supabase Realtime channels.
 
-This project serves as a practical implementation of **6 Software Design Patterns** and **2 Cloud Architectures**. Each pattern is a deliberate choice made to ensure the codebase remains maintainable, extensible, and robust.
+### Shared Whiteboard
 
-> [!NOTE]
-> For a detailed technical breakdown of how and where these patterns are implemented, please refer to the **[PATTERNS.md](./PATTERNS.md)** guide.
+A collaborative canvas for brainstorming, sketching, and visual thinking:
 
-1. **Observer** — Real-time event distribution.
-2. **Factory** — Dynamic audio generator creation.
-3. **Strategy** — Swappable theme logic.
-4. **Repository** — Decoupled database access.
-5. **Singleton** — Centralized Supabase client management.
-6. **Command** — Encapsulated whiteboard actions.
-7. **Serverless Architecture** — Our core cloud deployment strategy.
-8. **Event-Driven Architecture** — Real-time broadcast and presence sync.
+- **Resolution-independent sync** — Drawing coordinates are normalized (0–1) so the whiteboard works identically across different screen sizes.
+- **Leader-based state handoff** — When a new participant joins, the room's leader automatically sends them a full canvas snapshot, so nobody walks into a blank board.
+- **Export to PNG** — Save your whiteboard locally at any point (Download to your device).
 
----
+### Peer-to-Peer Voice
 
-## getting started
+Voice communication is handled via **WebRTC** with a full mesh topology:
 
-Whether you are here to explore the code or to host your own focus session, the setup process is designed to be straightforward.
+- **STUN + TURN** — Configured with public relay servers for cross-network connectivity.
+- **Perfect Negotiation** — Implements the W3C "perfect negotiation" pattern to eliminate race conditions during SDP exchange.
+- **Echo cancellation, noise suppression, and auto gain** — Enabled by default on all audio tracks.
 
-1. **Prerequisites**: Ensure you have Node.js 18+ and a Supabase account ready.
-2. **Setup**: Follow the step-by-step guide in **[SETUP.md](./SETUP.md)** to configure your environment.
-3. **Run**: `npm install` followed by `npm run dev` brings the room to life locally.
+### Private Sticky Notes
+
+Each participant gets their own set of draggable, pastel-toned sticky notes that persist across sessions. Notes are private — enforced at the database level via Supabase Row Level Security. Nobody else in the room can see yours.
+
+### Theming System
+
+Eight curated color palettes — Lavender Dream (Purple), Rose Garden (Pink), Ocean Breeze (Blue), Sage Meadow (Green), Honey Glow (Yellow), Sunset Ember (Orange), Cherry Blossom (Red), and Mocha Cream (Brown) — each with dedicated light and dark variants. Themes are applied at runtime by swapping CSS custom property tokens, implemented via the Strategy pattern.
 
 ---
 
-## aesthetics & typography
+## Tech Stack
 
-The visual identity of focus rooms relies on two primary serif fonts to convey a sense of calm and clarity:
-- **Playfair Display**: Used for headings to evoke a refined, editorial feel.
-- **Lora**: Used for body text for its readability and soft, contemporary character.
+| Layer           | Technology                  | Why                                                                                   |
+| :-------------- | :-------------------------- | :------------------------------------------------------------------------------------ |
+| **Framework**   | Next.js 14 (App Router)     | Server components, file-based routing, edge-ready deployment.                         |
+| **Language**    | TypeScript                  | End-to-end type safety across client and server.                                      |
+| **Styling**     | Tailwind CSS + Custom CSS   | Utility-first base with hand-tuned glassmorphism, animations, and theme tokens.       |
+| **Database**    | Supabase (PostgreSQL)       | Managed relational database with built-in Auth, RLS, and Realtime.                    |
+| **Real-Time**   | Supabase Realtime (Pub/Sub) | Low-latency event broadcasting for whiteboard strokes, presence, and atmosphere sync. |
+| **Voice/Media** | WebRTC                      | Direct peer-to-peer audio — no media server needed.                                   |
+| **Deployment**  | Vercel                      | Serverless hosting with automatic CI/CD from GitHub.                                  |
 
-The color palette is built on **Strategy Pattern** tokens, allowing for seamless transitions between light and dark modes while maintaining the core "Pinterest-pastel" aesthetic.
+---
+
+## Design Patterns & Architecture
+
+This codebase is structured around 8 deliberate design patterns. Each one solves a specific problem in the architecture, and none of them are there for the sake of it.
+
+> For a complete technical breakdown (including file paths, class names, and implementation details) see **[PATTERNS.md](./PATTERNS.md)**.
+
+### Software Patterns
+
+1. **Observer** — The `RealtimeManager` acts as a subject that notifies registered UI observers when real-time events arrive.
+2. **Factory** — `SoundFactory` encapsulates audio generator creation, so the UI never needs to know about `WhiteNoiseGenerator` vs `PinkNoiseGenerator`.
+3. **Strategy** — Theme palettes are interchangeable strategies applied at runtime via CSS custom properties.
+4. **Repository** — All database access goes through repository classes (`RoomRepository`, `NoteRepository`, etc.), keeping Supabase queries out of components.
+5. **Singleton** — The Supabase browser client is instantiated once and reused globally, preventing duplicate connections.
+6. **Command** — Whiteboard drawing actions are serialized into command objects and broadcast for remote replay.
+
+### Cloud Patterns
+
+7. **Serverless Architecture** — The entire backend runs on Vercel serverless functions and Supabase BaaS. No traditional server to manage.
+8. **Event-Driven Architecture** — All collaboration features (whiteboard, presence, atmosphere) communicate through a Pub/Sub event bus.
+
+---
+
+## Getting Started
+
+Full setup instructions — including Supabase configuration and Vercel deployment — are documented in **[SETUP.md](./SETUP.md)**.
+
+**Quick start:**
+
+```bash
+git clone https://github.com/your-username/focus-rooms.git
+cd focus-rooms
+npm install
+# Add your Supabase keys to .env.local (see SETUP.md)
+npm run dev
+```
+
+---
+
+## Typography & Visual Identity
+
+The interface uses two serif typefaces to set a calm, editorial tone:
+
+- **Playfair Display** for headings — refined and expressive.
+- **Lora** for body text — warm, readable, and contemporary.
+
+The color system is built on CSS custom properties that update dynamically when you switch themes. Every palette maintains consistent contrast ratios across light and dark modes, ensuring the interface stays legible and pretty regardless of the user's preference.

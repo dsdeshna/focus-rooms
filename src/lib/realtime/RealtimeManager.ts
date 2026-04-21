@@ -1,6 +1,5 @@
-// OBSERVER PATTERN IMPLEMENTED HERE
-// EVENT-DRIVEN ARCHITECTURE (CLOUD PATTERN)
-// Explanation: The RealtimeManager is the Subject in the Observer
+// Realtime Manager (Observer + Event-Driven)
+// The RealtimeManager is the Subject in the Observer
 // Pattern. It subscribes to a Supabase Realtime channel (which uses
 // Pub/Sub under the hood — the Event-Driven Cloud Pattern) and
 // notifies registered observer callbacks whenever events occur.
@@ -168,15 +167,14 @@ export class RealtimeManager {
       }
     });
 
-    // Handle visibility change for mobile (re-track when tab becomes active)
-    if (typeof window !== 'undefined') {
+    // Re-track presence when the tab regains focus (handles mobile backgrounding)
+    if (typeof globalThis !== 'undefined' && typeof document !== 'undefined') {
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible' && this.channel && this.currentStatus === 'connected') {
-          console.log('[Realtime] Tab visible, updating presence...');
           this.channel.track(userPresence).catch(err => console.error('[Realtime] Re-track failed:', err));
         }
       };
-      window.addEventListener('visibilitychange', handleVisibilityChange);
+      globalThis.addEventListener('visibilitychange', handleVisibilityChange);
     }
   }
 
@@ -184,17 +182,13 @@ export class RealtimeManager {
     if (!this.channel || this.currentStatus !== 'connected') return;
     
     if (this.pendingBroadcasts.length > 0) {
-      console.log(`[Realtime] Flushing ${this.pendingBroadcasts.length} pending broadcasts`);
       const toFlush = [...this.pendingBroadcasts];
       this.pendingBroadcasts = [];
       toFlush.forEach((ev) => this.broadcastEvent(ev));
     }
   }
 
-  /**
-   * EVENT-DRIVEN: Broadcast an event to all subscribers
-   * This is the "publish" side of Pub/Sub.
-   */
+  /** Broadcast an event to all participants in this room. */
   broadcastEvent(event: RoomEvent): void {
     if (!this.channel || this.currentStatus !== 'connected') {
       this.pendingBroadcasts.push(event);
@@ -264,10 +258,7 @@ export class RealtimeManager {
     });
   }
 
-  /**
-   * OBSERVER: Notify all event observers
-   * This is the "notify" method of the Observer Pattern.
-   */
+  /** Push a room event to all registered observers. */
   private notifyEventObservers(event: RoomEvent): void {
     this.eventObservers.forEach((callback) => {
       try {
@@ -278,9 +269,7 @@ export class RealtimeManager {
     });
   }
 
-  /**
-   * OBSERVER: Notify all presence observers
-   */
+  /** Push presence updates to all registered observers. */
   private notifyPresenceObservers(presences: PresenceState[]): void {
     this.presenceObservers.forEach((callback) => {
       try {
