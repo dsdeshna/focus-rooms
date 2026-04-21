@@ -59,6 +59,19 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
     const { action, soundType, key, volume, freq } = data;
     
     switch (action) {
+      case 'set-state':
+        // Explicit state setting (used for sync)
+        if (data.sounds && Array.isArray(data.sounds)) {
+          data.sounds.forEach((s: any) => {
+            if (s.type === 'noise') syncToggleNoise(s.soundType, s.volume, true);
+            else if (s.type === 'ambient') syncToggleAmbient(s.soundType, s.volume, true);
+          });
+        }
+        if (typeof data.freqActive === 'boolean') {
+          if (data.freqActive) syncFreqChange(data.frequency || 432, true);
+          else if (freqActive) syncToggleFreq();
+        }
+        break;
       case 'toggle-noise':
         if (soundType) syncToggleNoise(soundType as NoiseType);
         break;
@@ -75,34 +88,37 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
         if (typeof freq === 'number') syncFreqChange(freq);
         break;
     }
-  }, []);
+  }, [freqActive]);
 
   const handleSyncRequestInternal = useCallback(() => {
     if (!realtimeManager) return;
     
-    // Share current atmosphere state with new joiner (Leader Pattern)
-    const presences = realtimeManager.getPresences().sort((a, b) => 
-      new Date(a.online_at).getTime() - new Date(b.online_at).getTime()
-    );
+    // Robust Leader Election: Longest-serving participant shares state
+    const presences = realtimeManager.getPresences().sort((a, b) => {
+      const timeA = new Date(a.online_at).getTime();
+      const timeB = new Date(b.online_at).getTime();
+      if (timeA !== timeB) return timeA - timeB;
+      return a.connectionId.localeCompare(b.connectionId);
+    });
     
-    if (presences[0]?.user_id !== userId) return;
+    if (presences[0]?.connectionId !== realtimeManager.connectionId) return;
 
+    const soundsPayload: any[] = [];
     activeSounds.forEach((val, key) => {
       const [type, sound] = key.split('-');
-      realtimeManager.broadcastEvent({
-        type: 'atmosphere-changed', userId, userName,
-        data: { action: type === 'noise' ? 'toggle-noise' : 'toggle-ambient', soundType: sound, volume: val.volume },
-        timestamp: Date.now()
-      });
+      soundsPayload.push({ type, soundType: sound, volume: val.volume });
     });
 
-    if (freqActive) {
-      realtimeManager.broadcastEvent({ 
-        type: 'atmosphere-changed', userId, userName, 
-        data: { action: 'toggle-freq', freq: frequency }, 
-        timestamp: Date.now() 
-      });
-    }
+    realtimeManager.broadcastEvent({
+      type: 'atmosphere-changed', userId, userName,
+      data: { 
+        action: 'set-state', 
+        sounds: soundsPayload,
+        freqActive,
+        frequency
+      },
+      timestamp: Date.now()
+    });
   }, [realtimeManager, userId, userName, activeSounds, freqActive, frequency]);
 
   // Sync atmosphere state across participants
@@ -113,25 +129,37 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
       if (!realtimeManager || event.connectionId === realtimeManager.connectionId) return;
 
       if (event.type === 'atmosphere-changed' && event.data) {
-        handleAtmosphereEvent(event.data);
-      } else if (event.type === 'whiteboard-draw' && event.data?.action === 'sync-request') {
-        handleSyncRequestInternal();
+        if (event.data.action === 'sync-request') {
+          handleSyncRequestInternal();
+        } else {
+          handleAtmosphereEvent(event.data);
+        }
       }
     };
 
-    const cleanup = realtimeManager.subscribeToEvents('audio-sync', handleAudioSyncEvent);
+    realtimeManager.subscribeToEvents('audio-sync', handleAudioSyncEvent);
+
+    // Joiner: Request sync with delay to allow channel to stabilize
+    const timeoutId = globalThis.setTimeout(() => {
+      realtimeManager.broadcastEvent({
+        type: 'atmosphere-changed', userId, userName,
+        data: { action: 'sync-request' },
+        timestamp: Date.now()
+      });
+    }, 1000);
 
     return () => { 
+      globalThis.clearTimeout(timeoutId);
       realtimeManager.unsubscribeFromEvents('audio-sync'); 
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [realtimeManager, userId, activeSounds, freqActive, frequency, handleAtmosphereEvent, handleSyncRequestInternal]);
+  }, [realtimeManager, userId, handleAtmosphereEvent, handleSyncRequestInternal]);
 
-  const syncToggleNoise = (type: NoiseType) => {
-    try { toggleNoiseInternal(type, false); } catch (e) { console.error(e); }
+  const syncToggleNoise = (type: NoiseType, volume?: number, forceOn?: boolean) => {
+    try { toggleNoiseInternal(type, false, volume, forceOn); } catch (e) { console.error(e); }
   };
-  const syncToggleAmbient = (type: AmbientType) => {
-    try { toggleAmbientInternal(type, false); } catch (e) { console.error(e); }
+  const syncToggleAmbient = (type: AmbientType, volume?: number, forceOn?: boolean) => {
+    try { toggleAmbientInternal(type, false, volume, forceOn); } catch (e) { console.error(e); }
   };
   const syncVolumeChange = (key: string, volume: number) => {
     try { handleVolumeChangeInternal(key, volume, false); } catch (e) { console.error(e); }
@@ -139,8 +167,8 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
   const syncToggleFreq = () => {
     try { toggleFrequencyInternal(false); } catch (e) { console.error(e); }
   };
-  const syncFreqChange = (f: number) => {
-    try { handleFrequencyChangeInternal(f, false); } catch (e) { console.error(e); }
+  const syncFreqChange = (f: number, forceOn?: boolean) => {
+    try { handleFrequencyChangeInternal(f, false, forceOn); } catch (e) { console.error(e); }
   };
 
   const fadeOut = (audio: HTMLAudioElement) => {
@@ -159,16 +187,19 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
 
   const toggleNoise = (type: NoiseType) => toggleNoiseInternal(type, true);
 
-  const toggleNoiseInternal = (type: NoiseType, broadcast: boolean) => {
+  const toggleNoiseInternal = (type: NoiseType, broadcast: boolean, initialVolume?: number, forceOn?: boolean) => {
     const key = `noise-${type}`;
     const existing = activeSounds.get(key);
-    if (existing) {
+    
+    if (existing && !forceOn) {
       existing.generator.stop();
       setActiveSounds(prev => { const n = new Map(prev); n.delete(key); return n; });
-    } else {
+    } else if (!existing) {
       const generator = SoundFactory.createNoise(type);
+      const volume = typeof initialVolume === 'number' ? initialVolume : 0.3;
+      generator.setVolume(volume);
       generator.start();
-      setActiveSounds(prev => new Map(prev).set(key, { generator, volume: 0.3 }));
+      setActiveSounds(prev => new Map(prev).set(key, { generator, volume }));
     }
 
     if (broadcast && realtimeManager) {
@@ -182,21 +213,22 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
 
   const toggleAmbient = (type: AmbientType) => toggleAmbientInternal(type, true);
 
-  const toggleAmbientInternal = (type: AmbientType, broadcast: boolean) => {
+  const toggleAmbientInternal = (type: AmbientType, broadcast: boolean, initialVolume?: number, forceOn?: boolean) => {
     const key = `ambient-${type}`;
     const existing = activeSounds.get(key);
 
-    if (existing) {
+    if (existing && !forceOn) {
       existing.generator.stop();
       setActiveSounds(prev => {
         const n = new Map(prev);
         n.delete(key);
         return n;
       });
-    } else {
+    } else if (!existing) {
       const audio = new Audio(AMBIENT_AUDIO[type]);
       audio.loop = true;
-      audio.volume = 0.4;
+      const volume = typeof initialVolume === 'number' ? initialVolume : 0.4;
+      audio.volume = volume;
 
       // play safely
       audio.play().catch(() => {});
@@ -208,8 +240,8 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
           audio.play().catch(() => {});
           let vol = 0;
           const interval = setInterval(() => {
-            if (vol >= 0.4) clearInterval(interval);
-            else { vol += 0.05; audio.volume = vol; }
+            if (vol >= volume) clearInterval(interval);
+            else { vol += 0.05; audio.volume = Math.min(vol, volume); }
           }, 30);
         },
         stop: () => fadeOut(audio),
@@ -218,7 +250,7 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
         getType: () => `ambient-${type}`,
       };
 
-      setActiveSounds(prev => new Map(prev).set(key, { generator, volume: 0.4 }));
+      setActiveSounds(prev => new Map(prev).set(key, { generator, volume }));
     }
 
     if (broadcast && realtimeManager) {
@@ -269,9 +301,16 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
 
   const handleFrequencyChange = (f: number) => handleFrequencyChangeInternal(f, true);
 
-  const handleFrequencyChangeInternal = (freq: number, broadcast: boolean) => {
+  const handleFrequencyChangeInternal = (freq: number, broadcast: boolean, forceOn?: boolean) => {
     setFrequency(freq);
-    if (freqGenRef.current && freqActive) freqGenRef.current.setFrequency(freq);
+    if (!freqActive && forceOn) {
+      const gen = SoundFactory.createFrequency(freq);
+      gen.start();
+      freqGenRef.current = gen;
+      setFreqActive(true);
+    } else if (freqGenRef.current && freqActive) {
+      freqGenRef.current.setFrequency(freq);
+    }
 
     if (broadcast && realtimeManager) {
       realtimeManager.broadcastEvent({ 

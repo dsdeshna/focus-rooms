@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { StickyNote } from '@/types';
 
 export class NoteRepository {
-  private supabase = createClient();
+  private readonly supabase = createClient();
 
   /** Get all notes for a user in a room */
   async findByUserAndRoom(userId: string, roomId: string): Promise<StickyNote[]> {

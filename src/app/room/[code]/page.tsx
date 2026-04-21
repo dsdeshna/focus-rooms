@@ -17,7 +17,7 @@ import { compressImage } from '@/lib/utils/image';
 import {
   Mic, MicOff, PenTool,
   StickyNote, Music, Users, Copy, Check,
-  LogOut, Loader2, Leaf, ImagePlus, X,
+  LogOut, Leaf, ImagePlus, X,
 } from 'lucide-react';
 
 export default function RoomPage() {
@@ -512,7 +512,7 @@ export default function RoomPage() {
 
       {/* Soft diffusion layer for custom backgrounds */}
       {backgroundUrl && <div className="room-bg-overlay" 
-      style={{ opacity: 0.20 }}/>}
+      style={{ opacity: 0.2 }}/>}
 
       {/* Ambient orbs (only without custom bg) */}
       {!backgroundUrl && (

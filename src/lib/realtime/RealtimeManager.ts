@@ -60,17 +60,17 @@ function normalizePresenceState(state: Record<string, unknown[]>): PresenceState
 }
 
 export class RealtimeManager {
-  private supabase = createClient();
+  private readonly supabase = createClient();
   private channel: RealtimeChannel | null = null;
-  private roomCode: string;
+  private readonly roomCode: string;
   private pendingBroadcasts: RoomEvent[] = [];
   private currentStatus: 'connecting' | 'connected' | 'errored' | 'disconnected' = 'disconnected';
   public readonly connectionId: string;
 
   // OBSERVER: List of registered observer callbacks
-  private eventObservers: Map<string, EventObserver> = new Map();
-  private presenceObservers: Map<string, PresenceObserver> = new Map();
-  private statusObservers: Map<string, StatusObserver> = new Map();
+  private readonly eventObservers: Map<string, EventObserver> = new Map();
+  private readonly presenceObservers: Map<string, PresenceObserver> = new Map();
+  private readonly statusObservers: Map<string, StatusObserver> = new Map();
 
   constructor(roomCode: string) {
     this.roomCode = roomCode;
