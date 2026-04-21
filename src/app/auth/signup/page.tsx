@@ -25,7 +25,7 @@ export default function SignupPage() {
     try {
       const { error: authError } = await supabase.auth.signUp({
         email: email.trim(), password,
-        options: { data: { display_name: displayName.trim() }, emailRedirectTo: `${globalThis.location.origin}/auth/callback` },
+        options: { data: { display_name: displayName.trim() }, emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
       if (authError) {
         if (authError.message.toLowerCase().includes('already registered')) setError('This email is already registered.');
@@ -40,7 +40,7 @@ export default function SignupPage() {
   const handleGoogleSignup = async () => {
     setError('');
     try {
-      const { error: authError } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${globalThis.location.origin}/auth/callback` } });
+      const { error: authError } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback` } });
       if (authError) setError('Failed to initiate Google sign-up.');
     } catch { setError('Google sign-up failed.'); }
   };

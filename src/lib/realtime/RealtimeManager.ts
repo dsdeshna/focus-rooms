@@ -176,7 +176,7 @@ export class RealtimeManager {
           this.channel.track(userPresence).catch(err => console.error('[Realtime] Re-track failed:', err));
         }
       };
-      globalThis.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('visibilitychange', handleVisibilityChange);
     }
   }
 
@@ -224,7 +224,7 @@ export class RealtimeManager {
    */
   async updatePresence(updates: Partial<PresenceState>): Promise<void> {
     if (!this.channel) return;
-    await this.channel.track({ ...updates, connectionId: this.connectionId } as PresenceState);
+    await this.channel.track(updates as PresenceState);
   }
 
   /**

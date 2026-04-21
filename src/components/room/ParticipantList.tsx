@@ -55,9 +55,9 @@ export function ParticipantList({ participants, currentUserId, hostId }: Partici
 
           return (
             <div
-              key={p.connectionId}
+              key={p.user_id}
               className="pl-item"
-              id={`participant-${p.connectionId}`}
+              id={`participant-${p.user_id}`}
               style={{ animationDelay: `${i * 0.05}s` }}
             >
               {/* Avatar */}

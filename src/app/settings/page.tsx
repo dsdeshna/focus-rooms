@@ -73,7 +73,7 @@ export default function SettingsPage() {
     if (!user?.email) return;
     setSecurityError(''); setSecuritySuccess('');
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email, { redirectTo: `${globalThis.location.origin}/auth/callback?next=/settings` });
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, { redirectTo: `${window.location.origin}/auth/callback?next=/settings` });
       if (error) setSecurityError(error.message);
       else setSecuritySuccess('Password reset link sent to your email.');
     } catch (err) { setSecurityError(err instanceof Error ? err.message : 'Failed to send reset email.'); }
