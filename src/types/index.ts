@@ -1,24 +1,24 @@
 // Focus Rooms — Type Definitions
 
 export interface Profile {
-  id: string;
-  display_name: string;
-  avatar_url: string | null;
-  instagram: string | null;
-  linkedin: string | null;
-  github: string | null;
-  created_at: string;
-  updated_at: string;
+  readonly id: string;
+  readonly display_name: string;
+  readonly avatar_url: string | null;
+  readonly instagram: string | null;
+  readonly linkedin: string | null;
+  readonly github: string | null;
+  readonly created_at: string;
+  readonly updated_at: string;
 }
 
 export interface Room {
-  id: string;
-  code: string;
-  name: string;
-  created_by: string;
-  background_url: string | null;
-  is_active: boolean;
-  created_at: string;
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly created_by: string;
+  readonly background_url: string | null;
+  readonly is_active: boolean;
+  readonly created_at: string;
 }
 
 export interface RoomParticipant {
@@ -31,14 +31,14 @@ export interface RoomParticipant {
 }
 
 export interface StickyNote {
-  id: string;
-  room_id: string;
-  user_id: string;
-  content: string;
-  position_x: number;
-  position_y: number;
-  created_at: string;
-  updated_at: string;
+  readonly id: string;
+  readonly room_id: string;
+  readonly user_id: string;
+  readonly content: string;
+  readonly position_x: number;
+  readonly position_y: number;
+  readonly created_at: string;
+  readonly updated_at: string;
 }
 
 export interface WhiteboardSave {
@@ -110,21 +110,21 @@ export interface RoomEvent {
 
 // COMMAND PATTERN — Whiteboard Command Types
 export interface DrawCommand {
-  id: string;
-  type: 'draw' | 'erase' | 'clear';
-  data: string; // serialized fabric object JSON
-  userId: string;
-  timestamp: number;
+  readonly id: string;
+  readonly type: 'draw' | 'erase' | 'clear';
+  readonly data: string; // serialized fabric object JSON
+  readonly userId: string;
+  readonly timestamp: number;
 }
 
 // Presence state for participants
 export interface PresenceState {
-  user_id: string;
-  connectionId: string;
-  display_name: string;
-  is_mic_on: boolean;
-  is_screen_sharing: boolean;
-  online_at: string;
+  readonly user_id: string;
+  readonly connectionId: string;
+  readonly display_name: string;
+  readonly is_mic_on: boolean;
+  readonly is_screen_sharing: boolean;
+  readonly online_at: string;
 }
 
 // Notification

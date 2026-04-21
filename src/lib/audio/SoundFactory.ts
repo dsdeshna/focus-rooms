@@ -12,9 +12,7 @@ import { cryptoRandom } from '@/lib/utils';
 let audioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext {
-  if (!audioCtx) {
-    audioCtx = new AudioContext();
-  }
+  audioCtx ??= new AudioContext();
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
@@ -275,7 +273,7 @@ class FrequencyGenerator implements SoundGenerator {
 class AmbientSoundPlayer implements SoundGenerator {
   private audio: HTMLAudioElement | null = null;
   private playing = false;
-  private ambientType: AmbientType;
+  private readonly ambientType: AmbientType;
 
   constructor(type: AmbientType) {
     this.ambientType = type;

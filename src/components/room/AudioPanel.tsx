@@ -13,14 +13,14 @@ import { RealtimeManager } from '@/lib/realtime/RealtimeManager';
 import { Volume2, VolumeX, Wind, CloudRain, Trees, Waves, Flame, CloudSun, Radio } from 'lucide-react';
 
 interface AudioPanelProps {
-  realtimeManager: RealtimeManager | null;
-  userId: string;
-  userName: string;
+  readonly realtimeManager: RealtimeManager | null;
+  readonly userId: string;
+  readonly userName: string;
 }
 
 interface ActiveSound {
-  generator: SoundGenerator;
-  volume: number;
+  readonly generator: SoundGenerator;
+  readonly volume: number;
 }
 
 const NOISE_TYPES: { type: NoiseType; label: string; dot: string; desc: string }[] = [

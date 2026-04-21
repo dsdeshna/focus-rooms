@@ -168,7 +168,7 @@ export class RealtimeManager {
     });
 
     // Re-track presence when the tab regains focus (handles mobile backgrounding)
-    if (typeof globalThis !== 'undefined' && typeof document !== 'undefined') {
+    if (globalThis !== undefined && document !== undefined) {
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible' && this.channel && this.currentStatus === 'connected') {
           this.channel.track(userPresence).catch(err => console.error('[Realtime] Re-track failed:', err));

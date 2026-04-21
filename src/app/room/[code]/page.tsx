@@ -1123,7 +1123,7 @@ export default function RoomPage() {
 }
 
 // Hidden audio renderer with autoplay error handling
-function RemoteAudioPlayer({ stream, onBlocked }: { stream: MediaStream; onBlocked: () => void }) {
+function RemoteAudioPlayer({ stream, onBlocked }: Readonly<{ stream: MediaStream; onBlocked: () => void }>) {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {

@@ -50,10 +50,10 @@ export default function LandingPage() {
         <div className="ribbon" aria-hidden="true">
           <div className="ribbon-track">
             {['study together', '✦', 'shared canvas', '✦', 'real-time sync', '✦', 'ambient sound', '✦', 'synced whiteboard', '✦', 'sticky notes', '✦'].map((t, i) => (
-              <span key={i}>{t}</span>
+              <span key={`ribbon-original-${i}`}>{t}</span>
             ))}
             {['study together', '✦', 'shared canvas', '✦', 'real-time sync', '✦', 'ambient sound', '✦', 'synced whiteboard', '✦', 'sticky notes', '✦'].map((t, i) => (
-              <span key={`r-${i}`} aria-hidden="true">{t}</span>
+              <span key={`ribbon-mirror-${i}`} aria-hidden="true">{t}</span>
             ))}
           </div>
         </div>

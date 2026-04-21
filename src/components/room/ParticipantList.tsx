@@ -4,9 +4,9 @@ import { PresenceState } from '@/types';
 import { Mic, MicOff, MonitorUp } from 'lucide-react';
 
 interface ParticipantListProps {
-  participants: PresenceState[];
-  currentUserId: string;
-  hostId: string;
+  readonly participants: readonly PresenceState[];
+  readonly currentUserId: string;
+  readonly hostId: string;
 }
 
 export function ParticipantList({ participants, currentUserId, hostId }: ParticipantListProps) {

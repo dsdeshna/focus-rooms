@@ -10,9 +10,9 @@ import { StickyNote } from '@/types';
 import { Plus, Trash2, X } from 'lucide-react';
 
 interface StickyNotesProps {
-  roomId: string;
-  userId: string;
-  onClose: () => void;
+  readonly roomId: string;
+  readonly userId: string;
+  readonly onClose: () => void;
 }
 
 export function StickyNotes({ roomId, userId, onClose }: StickyNotesProps) {

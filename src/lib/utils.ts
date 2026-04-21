@@ -13,14 +13,14 @@ export function cn(...inputs: ClassValue[]) {
 export function cryptoRandom(): number {
   const array = new Uint32Array(1);
 
-  if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.getRandomValues) {
+  if (globalThis.crypto?.getRandomValues) {
     globalThis.crypto.getRandomValues(array);
   } else {
     // Node.js environments without globalThis.crypto (pre-19)
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const crypto = require('crypto');
+    const crypto = require('node:crypto');
     const webcrypto = crypto.webcrypto;
-    if (webcrypto && webcrypto.getRandomValues) {
+    if (webcrypto?.getRandomValues) {
       webcrypto.getRandomValues(array);
     } else {
       return crypto.randomInt(0, 0xFFFFFFFF) / (0xFFFFFFFF + 1);

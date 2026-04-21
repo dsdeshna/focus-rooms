@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 
-export function Header({ user }: { user?: { name: string; email: string } | null }) {
+export function Header({ user }: Readonly<{ user?: { name: string; email: string } | null }>) {
   const router = useRouter();
   const supabase = createClient();
 

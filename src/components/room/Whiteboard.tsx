@@ -13,10 +13,10 @@ import { Download, Trash2, Loader2, Minus, Plus } from 'lucide-react';
 import { cryptoRandom } from '@/lib/utils';
 
 interface WhiteboardProps {
-  roomCode: string;
-  userId: string;
-  roomId: string;
-  realtimeManager: RealtimeManager | null;
+  readonly roomCode: string;
+  readonly userId: string;
+  readonly roomId: string;
+  readonly realtimeManager: RealtimeManager | null;
 }
 
 const COLOR_PRESETS = [

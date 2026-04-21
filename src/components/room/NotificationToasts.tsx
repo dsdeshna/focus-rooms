@@ -5,8 +5,8 @@ import { Notification } from '@/types';
 import { X } from 'lucide-react';
 
 interface NotificationToastsProps {
-  notifications: Notification[];
-  onDismiss: (id: string) => void;
+  readonly notifications: readonly Notification[];
+  readonly onDismiss: (id: string) => void;
 }
 
 const TYPE_CONFIG = {

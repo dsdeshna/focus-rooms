@@ -107,6 +107,11 @@ export default function SettingsPage() {
       setDeleteLoading(false);
     }
   };
+  const renderSaveButtonContent = () => {
+    if (saving) return <Loader2 size={16} className="spin" />;
+    if (saved) return <><Check size={16} /> saved</>;
+    return 'save changes';
+  };
 
   if (loading) return (
     <div className="settings-loading">
@@ -194,13 +199,8 @@ export default function SettingsPage() {
           </div>
 
           <button onClick={handleSave} className="settings-save-btn" disabled={saving}>
-            {saving ? (
-              <Loader2 size={16} className="spin" />
-            ) : saved ? (
-              <><Check size={16} /> saved</>
-            ) : (
-              'save changes'
-            )}
+            {renderSaveButtonContent()}
+
           </button>
         </section>
 
