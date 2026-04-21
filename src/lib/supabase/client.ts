@@ -1,5 +1,6 @@
-// Supabase browser client (Singleton)
-// Only one instance is ever created to share auth state and connections.
+// SINGLETON PATTERN IMPLEMENTED HERE
+// Explanation: We create a single Supabase browser client instance
+// that is reused across the entire client-side application.
 // This prevents multiple GoTrue/Realtime connections and ensures
 // consistent auth state everywhere.
 
@@ -8,6 +9,7 @@ import { createBrowserClient } from '@supabase/ssr';
 let client: ReturnType<typeof createBrowserClient> | null = null;
 
 export function createClient() {
+  // === SINGLETON: Return existing instance if already created ===
   if (client) return client;
 
   client = createBrowserClient(

@@ -73,7 +73,7 @@ export default function SettingsPage() {
     if (!user?.email) return;
     setSecurityError(''); setSecuritySuccess('');
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email, { redirectTo: `${globalThis.location.origin}/auth/callback?next=/settings` });
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, { redirectTo: `${window.location.origin}/auth/callback?next=/settings` });
       if (error) setSecurityError(error.message);
       else setSecuritySuccess('Password reset link sent to your email.');
     } catch (err) { setSecurityError(err instanceof Error ? err.message : 'Failed to send reset email.'); }
@@ -106,11 +106,6 @@ export default function SettingsPage() {
       setSecurityError(err instanceof Error ? err.message : 'Unexpected error.');
       setDeleteLoading(false);
     }
-  };
-  const renderSaveButtonContent = () => {
-    if (saving) return <Loader2 size={16} className="spin" />;
-    if (saved) return <><Check size={16} /> saved</>;
-    return 'save changes';
   };
 
   if (loading) return (
@@ -199,8 +194,13 @@ export default function SettingsPage() {
           </div>
 
           <button onClick={handleSave} className="settings-save-btn" disabled={saving}>
-            {renderSaveButtonContent()}
-
+            {saving ? (
+              <Loader2 size={16} className="spin" />
+            ) : saved ? (
+              <><Check size={16} /> saved</>
+            ) : (
+              'save changes'
+            )}
           </button>
         </section>
 

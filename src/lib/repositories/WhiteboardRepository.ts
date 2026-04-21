@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { WhiteboardSave } from '@/types';
 
 export class WhiteboardRepository {
-  private readonly supabase = createClient();
+  private supabase = createClient();
 
   /** Save a whiteboard snapshot (as data URL stored in table) */
   async saveSnapshot(roomId: string, userId: string, dataUrl: string): Promise<WhiteboardSave> {

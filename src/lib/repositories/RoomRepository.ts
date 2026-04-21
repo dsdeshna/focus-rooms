@@ -1,4 +1,4 @@
-// Room Repository
+// REPOSITORY PATTERN IMPLEMENTED HERE
 // RoomRepository abstracts all database operations
 // for the "rooms" table behind a clean interface. The rest of the
 // app never directly calls Supabase queries for rooms — it always
@@ -10,7 +10,7 @@ import { Room } from '@/types';
 import { generateRoomCode } from '@/lib/utils';
 
 export class RoomRepository {
-  private readonly supabase = createClient();
+  private supabase = createClient();
 
   /** Create a new room with a unique code */
   async create(name: string, createdBy: string): Promise<Room> {
@@ -77,7 +77,7 @@ export class RoomRepository {
     if (joinedData) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       joinedData.forEach((row: any) => {
-        if (row.rooms?.is_active) {
+        if (row.rooms && row.rooms.is_active) {
           roomsMap.set(row.rooms.id, row.rooms as Room);
         }
       });

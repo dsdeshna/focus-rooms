@@ -1,7 +1,7 @@
 // SERVERLESS ARCHITECTURE (CLOUD PATTERN)
-// OAuth callback handler
-// Exchanges the auth code from Google for a Supabase session,
-// then creates or updates the user's profile.
+// Explanation: This route handler runs as a Vercel Serverless
+// Function. It handles the OAuth callback from Google, exchanges
+// the auth code for a session, and creates the user profile.
 // No traditional server — pure serverless execution.
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';

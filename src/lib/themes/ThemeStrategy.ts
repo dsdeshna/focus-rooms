@@ -1,6 +1,6 @@
-// Theme Strategy
-// Each colour palette is a strategy with light + dark variants.
-// Themes are applied at runtime by setting CSS custom properties.
+// STRATEGY PATTERN IMPLEMENTED HERE
+// Each color theme has both a light and dark variant.
+// The ThemeContext holds the current strategy + mode.
 
 import { Theme } from '@/types';
 
@@ -201,7 +201,7 @@ export function getThemeColors(themeKey: string, isDark: boolean): Theme['colors
   return isDark ? base.dark : base.light;
 }
 
-// Applies the selected theme strategy to the document root.
+// STRATEGY CONTEXT: Applies the chosen theme strategy + mode
 export function applyTheme(themeKey: string, isDark?: boolean): void {
   const base = baseThemes[themeKey];
   if (!base) return;
@@ -230,13 +230,13 @@ export function applyTheme(themeKey: string, isDark?: boolean): void {
 }
 
 export function getStoredTheme(): string {
-  if (typeof globalThis === 'undefined' || typeof globalThis.localStorage === 'undefined') return 'lavender-dream';
-  return globalThis.localStorage.getItem('focus-rooms-theme') || 'lavender-dream';
+  if (typeof window === 'undefined') return 'lavender-dream';
+  return localStorage.getItem('focus-rooms-theme') || 'lavender-dream';
 }
 
 export function getDarkMode(): boolean {
-  if (typeof globalThis === 'undefined' || typeof globalThis.localStorage === 'undefined') return false;
-  return globalThis.localStorage.getItem('focus-rooms-dark') === 'true';
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem('focus-rooms-dark') === 'true';
 }
 
 export function toggleDarkMode(): boolean {

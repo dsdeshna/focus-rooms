@@ -41,19 +41,19 @@ interface PendingSignal {
 }
 
 export class PeerManager {
-  private readonly supabase = createClient();
+  private supabase = createClient();
   private channel: RealtimeChannel | null = null;
   private currentStatus: 'connecting' | 'connected' | 'errored' | 'disconnected' = 'disconnected';
   private pendingSignals: PendingSignal[] = [];
-  private readonly peers: Map<string, RTCPeerConnection> = new Map();
-  private readonly makingOffer: Set<string> = new Set();
-  private readonly ignoredOffers: Set<string> = new Set();
-  private readonly pendingIceCandidates: Map<string, RTCIceCandidateInit[]> = new Map();
+  private peers: Map<string, RTCPeerConnection> = new Map();
+  private makingOffer: Set<string> = new Set();
+  private ignoredOffers: Set<string> = new Set();
+  private pendingIceCandidates: Map<string, RTCIceCandidateInit[]> = new Map();
   private localStream: MediaStream | null = null;
-  private readonly roomCode: string;
-  private readonly userId: string;
-  private readonly onRemoteStream: (userId: string, stream: MediaStream, type: 'audio') => void;
-  private readonly onRemoteStreamRemoved: (userId: string, type: 'audio') => void;
+  private roomCode: string;
+  private userId: string;
+  private onRemoteStream: (userId: string, stream: MediaStream, type: 'audio') => void;
+  private onRemoteStreamRemoved: (userId: string, type: 'audio') => void;
 
   constructor(
     roomCode: string,

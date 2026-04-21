@@ -6,28 +6,23 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Cryptographically secure alternative to Math.random().
- * Uses the Web Crypto API on both client and server.
- * Returns a float in [0, 1).
+ * Cryptographically secure random number generator.
+ * Returns a value between 0 (inclusive) and 1 (exclusive),
  */
 export function cryptoRandom(): number {
-  const array = new Uint32Array(1);
-
-  if (globalThis.crypto?.getRandomValues) {
-    globalThis.crypto.getRandomValues(array);
-  } else {
-    // Node.js environments without globalThis.crypto (pre-19)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const crypto = require('node:crypto');
-    const webcrypto = crypto.webcrypto;
-    if (webcrypto?.getRandomValues) {
-      webcrypto.getRandomValues(array);
-    } else {
-      return crypto.randomInt(0, 0xFFFFFFFF) / (0xFFFFFFFF + 1);
+  if (typeof window !== 'undefined') {
+    const crypto = window.crypto || (window as any).msCrypto;
+    if (crypto && crypto.getRandomValues) {
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      return array[0] / (0xFFFFFFFF + 1);
     }
   }
-
-  return array[0] / (0xFFFFFFFF + 1);
+  
+  // Server-side / Node.js
+  const crypto = require('crypto');
+  const buf = crypto.randomBytes(4);
+  return buf.readUInt32LE(0) / (0xFFFFFFFF + 1);
 }
 
 /**

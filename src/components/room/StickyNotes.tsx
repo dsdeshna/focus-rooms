@@ -1,6 +1,8 @@
-// Sticky Notes (Repository pattern)
-// Draggable personal notes that persist via NoteRepository.
-// Notes are private to each user (enforced by Supabase RLS).
+// ============================================================
+// === REPOSITORY PATTERN USAGE ===
+// StickyNotes uses NoteRepository to persist personal notes.
+// Notes are private — only visible to the owner (RLS enforced).
+// ============================================================
 
 'use client';
 
@@ -10,9 +12,9 @@ import { StickyNote } from '@/types';
 import { Plus, Trash2, X } from 'lucide-react';
 
 interface StickyNotesProps {
-  readonly roomId: string;
-  readonly userId: string;
-  readonly onClose: () => void;
+  roomId: string;
+  userId: string;
+  onClose: () => void;
 }
 
 export function StickyNotes({ roomId, userId, onClose }: StickyNotesProps) {
@@ -53,6 +55,7 @@ export function StickyNotes({ roomId, userId, onClose }: StickyNotesProps) {
   };
 
   const handleUpdatePosition = async (noteId: string, x: number, y: number) => {
+    // Optimistic update already handled by local state in DraggableNote
     try {
       await noteRepo.updatePosition(noteId, x, y);
     } catch (err) {
@@ -179,7 +182,7 @@ export function StickyNotes({ roomId, userId, onClose }: StickyNotesProps) {
   );
 }
 
-// Draggable Note
+// ── Draggable Note ──────────────────────────────────────────────
 const NOTE_PALETTES = [
   { bg: '#FFF9EC', border: '#F0E8CC' },  // warm cream
   { bg: '#F0F5F0', border: '#D8E8D8' },  // sage
@@ -207,8 +210,9 @@ function DraggableNote({
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const palette = NOTE_PALETTES[index % NOTE_PALETTES.length];
 
-  const handleDragStart = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
+    if ((e.target as HTMLElement).tagName === 'BUTTON') return;
     setIsDragging(true);
     dragOffset.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
@@ -220,9 +224,9 @@ function DraggableNote({
       setIsDragging(false);
       onUpdatePosition(note.id, position.x, position.y);
     };
-    globalThis.addEventListener('mousemove', onMove);
-    globalThis.addEventListener('mouseup', onUp);
-    return () => { globalThis.removeEventListener('mousemove', onMove); globalThis.removeEventListener('mouseup', onUp); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
   }, [isDragging, note.id, position.x, position.y, onUpdatePosition]);
 
   const handleContentChange = (content: string) => {
@@ -232,33 +236,29 @@ function DraggableNote({
   };
 
   return (
-    <section
-      className={`sn-note ${isDragging ? 'sn-note--dragging' : ''} ${isFocused ? 'sn-note--focused' : ''}`}
+    <div
+      className={`sn-note pointer-events-auto ${isDragging ? 'sn-note--dragging' : ''} ${isFocused ? 'sn-note--focused' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
+        cursor: isDragging ? 'grabbing' : 'grab',
         zIndex: isDragging || isFocused ? 100 : 50,
         background: palette.bg,
         borderColor: palette.border,
       }}
-      aria-label={`Sticky note ${index + 1}`}
+      onMouseDown={handleMouseDown}
+      role="region"
+      aria-label="Sticky note"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          if (!isDragging && !isFocused) onDelete(note.id);
+        }
+      }}
     >
-      {/* Drag handle — this is the interactive element for dragging */}
+      {/* Header */}
       <div className="sn-note-header">
-        <button
-          className="sn-drag-handle"
-          onMouseDown={handleDragStart}
-          aria-label="Drag to reposition note"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-              if (!isFocused) onDelete(note.id);
-            }
-          }}
-          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-        >
-          <span className="sn-note-label">✦ private</span>
-        </button>
+        <span className="sn-note-label">✦ private</span>
         <button
           className="sn-note-delete"
           onClick={() => onDelete(note.id)}
@@ -278,17 +278,6 @@ function DraggableNote({
         placeholder="write something small…"
       />
 
-      {/* Bottom drag handle — fixes the "hidden handle" issue */}
-      <button 
-        className="sn-drag-footer" 
-        onMouseDown={handleDragStart}
-        aria-label="Drag from bottom"
-        tabIndex={-1}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-      >
-        <div className="sn-drag-dots" />
-      </button>
-
       <style>{`
         .sn-note {
           position: absolute;
@@ -304,7 +293,6 @@ function DraggableNote({
           animation: noteIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
           transition: box-shadow 0.3s ease;
           user-select: none;
-          pointer-events: auto;
         }
         @keyframes noteIn {
           from { opacity: 0; transform: scale(0.9) rotate(-2deg); }
@@ -313,27 +301,6 @@ function DraggableNote({
         .sn-note--dragging {
           box-shadow: 0 16px 40px -8px rgba(100,90,80,0.25);
           transform: rotate(1deg);
-        }
-
-        .sn-drag-footer {
-          height: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: transparent;
-          border: none;
-          padding: 0;
-          margin-top: -0.2rem;
-          opacity: 0.3;
-          transition: opacity 0.2s;
-        }
-        .sn-drag-footer:hover { opacity: 0.8; }
-        .sn-drag-dots {
-          width: 20px;
-          height: 3px;
-          border-radius: 2px;
-          background: currentColor;
-          opacity: 0.4;
         }
         .sn-note--focused {
           box-shadow: 0 8px 28px -6px rgba(100,90,80,0.18);
@@ -344,14 +311,6 @@ function DraggableNote({
           align-items: center;
           justify-content: space-between;
         }
-        .sn-drag-handle {
-          background: none;
-          border: none;
-          padding: 0.15rem 0.25rem;
-          display: flex;
-          align-items: center;
-          flex: 1;
-        }
         .sn-note-label {
           font-family: var(--font-sans);
           font-size: 0.6rem;
@@ -359,7 +318,6 @@ function DraggableNote({
           text-transform: uppercase;
           color: var(--color-text-muted);
           opacity: 0.7;
-          pointer-events: none;
         }
         .sn-note-delete {
           background: none;
@@ -398,6 +356,6 @@ function DraggableNote({
           opacity: 0.5;
         }
       `}</style>
-    </section>
+    </div>
   );
 }

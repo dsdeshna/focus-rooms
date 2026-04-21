@@ -1,5 +1,6 @@
-// Realtime Manager (Observer + Event-Driven)
-// The RealtimeManager is the Subject in the Observer
+// OBSERVER PATTERN IMPLEMENTED HERE
+// EVENT-DRIVEN ARCHITECTURE (CLOUD PATTERN)
+// Explanation: The RealtimeManager is the Subject in the Observer
 // Pattern. It subscribes to a Supabase Realtime channel (which uses
 // Pub/Sub under the hood — the Event-Driven Cloud Pattern) and
 // notifies registered observer callbacks whenever events occur.
@@ -60,17 +61,17 @@ function normalizePresenceState(state: Record<string, unknown[]>): PresenceState
 }
 
 export class RealtimeManager {
-  private readonly supabase = createClient();
+  private supabase = createClient();
   private channel: RealtimeChannel | null = null;
-  private readonly roomCode: string;
+  private roomCode: string;
   private pendingBroadcasts: RoomEvent[] = [];
   private currentStatus: 'connecting' | 'connected' | 'errored' | 'disconnected' = 'disconnected';
   public readonly connectionId: string;
 
   // OBSERVER: List of registered observer callbacks
-  private readonly eventObservers: Map<string, EventObserver> = new Map();
-  private readonly presenceObservers: Map<string, PresenceObserver> = new Map();
-  private readonly statusObservers: Map<string, StatusObserver> = new Map();
+  private eventObservers: Map<string, EventObserver> = new Map();
+  private presenceObservers: Map<string, PresenceObserver> = new Map();
+  private statusObservers: Map<string, StatusObserver> = new Map();
 
   constructor(roomCode: string) {
     this.roomCode = roomCode;
@@ -167,14 +168,15 @@ export class RealtimeManager {
       }
     });
 
-    // Re-track presence when the tab regains focus (handles mobile backgrounding)
-    if (globalThis !== undefined && document !== undefined) {
+    // Handle visibility change for mobile (re-track when tab becomes active)
+    if (typeof window !== 'undefined') {
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible' && this.channel && this.currentStatus === 'connected') {
+          console.log('[Realtime] Tab visible, updating presence...');
           this.channel.track(userPresence).catch(err => console.error('[Realtime] Re-track failed:', err));
         }
       };
-      globalThis.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('visibilitychange', handleVisibilityChange);
     }
   }
 
@@ -182,13 +184,17 @@ export class RealtimeManager {
     if (!this.channel || this.currentStatus !== 'connected') return;
     
     if (this.pendingBroadcasts.length > 0) {
+      console.log(`[Realtime] Flushing ${this.pendingBroadcasts.length} pending broadcasts`);
       const toFlush = [...this.pendingBroadcasts];
       this.pendingBroadcasts = [];
       toFlush.forEach((ev) => this.broadcastEvent(ev));
     }
   }
 
-  /** Broadcast an event to all participants in this room. */
+  /**
+   * EVENT-DRIVEN: Broadcast an event to all subscribers
+   * This is the "publish" side of Pub/Sub.
+   */
   broadcastEvent(event: RoomEvent): void {
     if (!this.channel || this.currentStatus !== 'connected') {
       this.pendingBroadcasts.push(event);
@@ -258,7 +264,10 @@ export class RealtimeManager {
     });
   }
 
-  /** Push a room event to all registered observers. */
+  /**
+   * OBSERVER: Notify all event observers
+   * This is the "notify" method of the Observer Pattern.
+   */
   private notifyEventObservers(event: RoomEvent): void {
     this.eventObservers.forEach((callback) => {
       try {
@@ -269,7 +278,9 @@ export class RealtimeManager {
     });
   }
 
-  /** Push presence updates to all registered observers. */
+  /**
+   * OBSERVER: Notify all presence observers
+   */
   private notifyPresenceObservers(presences: PresenceState[]): void {
     this.presenceObservers.forEach((callback) => {
       try {

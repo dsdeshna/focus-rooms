@@ -4,9 +4,9 @@ import { PresenceState } from '@/types';
 import { Mic, MicOff, MonitorUp } from 'lucide-react';
 
 interface ParticipantListProps {
-  readonly participants: readonly PresenceState[];
-  readonly currentUserId: string;
-  readonly hostId: string;
+  participants: PresenceState[];
+  currentUserId: string;
+  hostId: string;
 }
 
 export function ParticipantList({ participants, currentUserId, hostId }: ParticipantListProps) {
@@ -55,9 +55,9 @@ export function ParticipantList({ participants, currentUserId, hostId }: Partici
 
           return (
             <div
-              key={p.connectionId}
+              key={p.user_id}
               className="pl-item"
-              id={`participant-${p.connectionId}`}
+              id={`participant-${p.user_id}`}
               style={{ animationDelay: `${i * 0.05}s` }}
             >
               {/* Avatar */}

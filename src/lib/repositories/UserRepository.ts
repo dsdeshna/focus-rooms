@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Profile } from '@/types';
 
 export class UserRepository {
-  private readonly supabase = createClient();
+  private supabase = createClient();
 
   /** Get a user profile by ID */
   async findById(userId: string): Promise<Profile | null> {
