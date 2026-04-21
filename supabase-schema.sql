@@ -1,7 +1,5 @@
--- ============================================================
 -- Focus Rooms — Supabase Database Schema
 -- Run this SQL in your Supabase SQL Editor (Dashboard → SQL Editor → New Query)
--- ============================================================
 
 -- 1. Profiles table (extends auth.users)
 create table if not exists public.profiles (
@@ -57,9 +55,7 @@ create table if not exists public.whiteboard_saves (
   created_at timestamptz default now()
 );
 
--- ============================================================
 -- Row Level Security (RLS) Policies
--- ============================================================
 
 -- Enable RLS on all tables
 alter table public.profiles enable row level security;
@@ -94,14 +90,10 @@ create policy "Users can delete their own notes" on public.sticky_notes for dele
 create policy "Users can view their own whiteboard saves" on public.whiteboard_saves for select using (auth.uid() = user_id);
 create policy "Users can save whiteboards" on public.whiteboard_saves for insert with check (auth.uid() = user_id);
 
--- ============================================================
 -- Enable Realtime for relevant tables
--- ============================================================
 alter publication supabase_realtime add table public.room_participants;
 
--- ============================================================
 -- Function: Auto-create profile on signup
--- ============================================================
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
@@ -122,11 +114,9 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- ============================================================
 -- Function: Delete User Account
 -- Security definer allows the function to execute with privileges
 -- of the creator, allowing deletion from auth.users.
--- ============================================================
 create or replace function public.delete_user()
 returns void as $$$
 begin

@@ -1,5 +1,4 @@
-// ============================================================
-// === COMMAND PATTERN IMPLEMENTED HERE ===
+// COMMAND PATTERN IMPLEMENTED HERE
 // Explanation: Each drawing action on the whiteboard is a Command
 // object. When a user draws, we create a DrawCommand with the
 // serialized canvas data and broadcast it to other users.
@@ -19,6 +18,7 @@ import { RealtimeManager } from '@/lib/realtime/RealtimeManager';
 import { WhiteboardRepository } from '@/lib/repositories/WhiteboardRepository';
 import { RoomEvent } from '@/types';
 import { Download, Trash2, Loader2, Minus, Plus } from 'lucide-react';
+import { cryptoRandom } from '@/lib/utils';
 
 interface WhiteboardProps {
   roomCode: string;
@@ -157,7 +157,7 @@ export function Whiteboard({ roomCode, userId, roomId, realtimeManager }: Whiteb
 
     window.setTimeout(() => {
       broadcastSnapshot(requestId, requesterConnectionId);
-    }, Math.random() * 200 + 50);
+    }, cryptoRandom() * 200 + 50);
   }, [realtimeManager, broadcastSnapshot]);
 
   const handleRemoteFullSync = useCallback((data: any) => {

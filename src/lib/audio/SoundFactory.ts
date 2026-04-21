@@ -1,16 +1,15 @@
-// ============================================================
-// === FACTORY PATTERN IMPLEMENTED HERE ===
+// FACTORY PATTERN IMPLEMENTED HERE
 // Explanation: SoundFactory is a Factory that creates different
 // SoundGenerator objects based on the requested type.
 // Each noise type (white, pink, brown) and ambient sound is a
 // different product, but they all implement the same SoundGenerator
 // interface. The Factory encapsulates the creation logic so the
 // client code doesn't need to know which specific class to instantiate.
-// ============================================================
 
 import { SoundGenerator, NoiseType, AmbientType } from '@/types';
+import { cryptoRandom } from '@/lib/utils';
 
-// === AudioContext Singleton ===
+// AudioContext Singleton
 let audioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext {
@@ -23,9 +22,7 @@ function getAudioContext(): AudioContext {
   return audioCtx;
 }
 
-// ============================================================
-// === FACTORY PRODUCTS: Each noise generator is a concrete product ===
-// ============================================================
+// FACTORY PRODUCTS: Each noise generator is a concrete product
 
 class WhiteNoiseGenerator implements SoundGenerator {
   private source: AudioBufferSourceNode | null = null;
@@ -41,7 +38,7 @@ class WhiteNoiseGenerator implements SoundGenerator {
 
     // White noise: pure random values
     for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
+      data[i] = cryptoRandom() * 2 - 1;
     }
 
     this.source = ctx.createBufferSource();
@@ -100,7 +97,7 @@ class PinkNoiseGenerator implements SoundGenerator {
     // Pink noise using Paul Kellet's refined method
     let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
     for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
+      const white = cryptoRandom() * 2 - 1;
       b0 = 0.99886 * b0 + white * 0.0555179;
       b1 = 0.99332 * b1 + white * 0.0750759;
       b2 = 0.96900 * b2 + white * 0.1538520;
@@ -167,7 +164,7 @@ class BrownNoiseGenerator implements SoundGenerator {
     // Brown noise: integrated white noise
     let lastOut = 0;
     for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
+      const white = cryptoRandom() * 2 - 1;
       data[i] = (lastOut + 0.02 * white) / 1.02;
       lastOut = data[i];
       data[i] *= 3.5; // amplify
@@ -321,13 +318,11 @@ class AmbientSoundPlayer implements SoundGenerator {
   }
 }
 
-// ============================================================
-// === THE FACTORY: Creates the appropriate SoundGenerator ===
-// ============================================================
+// FACTORY: Creates the appropriate SoundGenerator
 
 export class SoundFactory {
   /**
-   * === FACTORY METHOD ===
+   * FACTORY METHOD
    * Creates a SoundGenerator based on the requested type.
    * The client doesn't need to know which concrete class to use.
    */

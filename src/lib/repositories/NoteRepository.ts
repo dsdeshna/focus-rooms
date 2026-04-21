@@ -1,8 +1,6 @@
-// ============================================================
-// === REPOSITORY PATTERN — NoteRepository ===
+// REPOSITORY PATTERN — NoteRepository
 // Abstracts all sticky note database operations.
 // Notes are personal (visible only to the owner).
-// ============================================================
 
 import { createClient } from '@/lib/supabase/client';
 import { StickyNote } from '@/types';

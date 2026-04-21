@@ -262,7 +262,6 @@ export default function RoomPage() {
         // the "reverting on refresh" issue by keeping it under DB/Proxy limits.
         const compressedUrl = await compressImage(rawUrl, 1920, 0.75);
         
-        console.log("📸 Compression Ratio:", Math.round((compressedUrl.length / rawUrl.length) * 100) + "%");
         setBackgroundUrl(compressedUrl);
 
         if (room) {

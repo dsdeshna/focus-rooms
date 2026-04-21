@@ -1,11 +1,9 @@
-// ============================================================
-// === REPOSITORY PATTERN IMPLEMENTED HERE ===
-// Explanation: RoomRepository abstracts all database operations
+// REPOSITORY PATTERN IMPLEMENTED HERE
+// RoomRepository abstracts all database operations
 // for the "rooms" table behind a clean interface. The rest of the
 // app never directly calls Supabase queries for rooms — it always
 // goes through this repository. This decouples data access from
 // business logic, making it easy to swap the data source.
-// ============================================================
 
 import { createClient } from '@/lib/supabase/client';
 import { Room } from '@/types';
@@ -104,7 +102,6 @@ export class RoomRepository {
         return false;
       }
 
-      console.log('✅ Background successfully saved to database');
       return true;
     } catch (err) {
       console.error('❌ updateBackground exception:', err);

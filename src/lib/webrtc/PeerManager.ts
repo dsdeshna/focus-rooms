@@ -1,6 +1,5 @@
-// WebRTC Peer Manager
-// Handles peer-to-peer connections for mic audio.
-// Uses Supabase Realtime Broadcast for signaling (SDP & ICE exchange).
+// webrtc peer manager
+// handles peer-to-peer audio communication using supabase signaling.
 
 import { createClient } from '@/lib/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -164,7 +163,6 @@ export class PeerManager {
       return;
     }
 
-    console.log(`[WebRTC] Creating connection to ${remoteUserId} (initiator: ${initiator})`);
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     this.peers.set(remoteUserId, pc);
 
@@ -196,9 +194,7 @@ export class PeerManager {
       }
     };
 
-    pc.oniceconnectionstatechange = () => {
-      console.log(`[WebRTC] ICE state with ${remoteUserId}: ${pc.iceConnectionState}`);
-    };
+    pc.oniceconnectionstatechange = () => {};
 
     // If initiator, create and send offer
     if (initiator) {
@@ -280,7 +276,6 @@ export class PeerManager {
   }
 
   private async handleOffer(fromUserId: string, sdp: RTCSessionDescriptionInit): Promise<void> {
-    console.log(`[WebRTC] Received offer from ${fromUserId}`);
     await this.createPeerConnection(fromUserId, false);
     const pc = this.peers.get(fromUserId);
     if (!pc) return;
@@ -312,7 +307,6 @@ export class PeerManager {
   }
 
   private async handleAnswer(fromUserId: string, sdp: RTCSessionDescriptionInit): Promise<void> {
-    console.log(`[WebRTC] Received answer from ${fromUserId}`);
     const pc = this.peers.get(fromUserId);
     if (!pc) return;
 

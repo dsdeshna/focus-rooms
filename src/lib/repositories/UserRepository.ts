@@ -1,7 +1,5 @@
-// ============================================================
-// === REPOSITORY PATTERN — UserRepository ===
+// REPOSITORY PATTERN — UserRepository
 // Abstracts all profile/user database operations.
-// ============================================================
 
 import { createClient } from '@/lib/supabase/client';
 import { Profile } from '@/types';

@@ -13,6 +13,7 @@
 import { createClient } from '@/lib/supabase/client';
 import { RoomEvent, PresenceState } from '@/types';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { cryptoRandom } from '@/lib/utils';
 
 type EventObserver = (event: RoomEvent) => void;
 type PresenceObserver = (presences: PresenceState[]) => void;
@@ -74,7 +75,7 @@ export class RealtimeManager {
 
   constructor(roomCode: string) {
     this.roomCode = roomCode;
-    this.connectionId = Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+    this.connectionId = cryptoRandom().toString(36).substring(2, 11) + Date.now().toString(36);
   }
 
   /**
@@ -123,7 +124,6 @@ export class RealtimeManager {
     if (this.channel) return;
 
     this.updateStatus('connecting');
-    console.log(`[Realtime] Connecting to room:${this.roomCode}...`);
 
     const channel = this.supabase.channel(`room:${this.roomCode}`, {
       config: { presence: { key: userPresence.user_id } },
@@ -158,8 +158,6 @@ export class RealtimeManager {
         const { error } = await channel.track(userPresence);
         if (error) {
           console.error('[Realtime] Failed to track presence:', error);
-        } else {
-          console.log('[Realtime] Presence tracked successfully');
         }
         
         // Flush any broadcasts sent while connecting

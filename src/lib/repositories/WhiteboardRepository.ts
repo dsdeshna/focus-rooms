@@ -1,7 +1,5 @@
-// ============================================================
-// === REPOSITORY PATTERN — WhiteboardRepository ===
+// REPOSITORY PATTERN — WhiteboardRepository
 // Abstracts whiteboard snapshot save/load operations.
-// ============================================================
 
 import { createClient } from '@/lib/supabase/client';
 import { WhiteboardSave } from '@/types';

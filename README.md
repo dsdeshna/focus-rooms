@@ -1,190 +1,78 @@
-# 🌸 Focus Rooms
+# focus rooms
 
-A collaborative focus room web application where people can join rooms, share whiteboards, play ambient sounds, talk via mic, share their screens, and take personal notes — all wrapped in a dreamy, Tumblr-inspired pastel aesthetic.
+A collaborative digital sanctuary designed for deep work, creative flow, and quiet connection. focus rooms blends a dreamy, minimalist aesthetic with robust real-time features to create a space where you can focus together, apart.
 
-**Built for:** Cloud Computing + Software Patterns courses  
-**Deployment:** Vercel (Frontend/Next.js) + Supabase (Database/Auth/Realtime)
-
----
-
-## ✨ Features
-
-| Feature | Description |
-|---------|-------------|
-| 🔐 **Authentication** | Email/password + Google OAuth sign-in via Supabase Auth |
-| 🚪 **Room System** | Create rooms with shareable 6-character codes, join with a code |
-| 🎵 **Sound Generators** | White, pink, and brown noise generators (Web Audio API) |
-| 🎚️ **Frequency Slider** | Tunable sine wave generator (20Hz–2000Hz) with preset frequencies |
-| 🌧️ **Ambient Sounds** | Rain, café, forest, ocean, fireplace, wind |
-| 🎤 **Voice Chat** | Toggle mic for real-time voice communication (WebRTC peer-to-peer) |
-| 🖼️ **Screen Sharing** | Share your screen with all room participants (WebRTC) |
-| 🎨 **Collaborative Whiteboard** | Draw together with color picker and adjustable brush sizes |
-| 📥 **Save Whiteboard** | Download the whiteboard as a PNG image |
-| 📝 **Sticky Notes** | Personal, translucent, draggable notes visible only to you |
-| 🔔 **Notifications** | Toast notifications when someone joins or opens the whiteboard |
-| 👥 **Participant List** | Zoom-style list with mic on/off indicators |
-| 🖼️ **Custom Backgrounds** | Upload a background image for the room |
-| 🎨 **8 Color Themes** | Switch between 8 distinct pastel themes (Strategy Pattern) |
-| ⚙️ **Account Settings** | Edit display name, link Instagram/LinkedIn/GitHub |
+Built for the **Cloud Computing** and **Software Design Patterns** courses, this application explores the intersection of serverless architecture and elegant code design.
 
 ---
 
-## 🏗️ Tech Stack
+## the experience
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 16 (App Router) + React 19 + TypeScript |
-| Styling | Tailwind CSS + Custom CSS (glassmorphism, animations) |
-| Fonts | Playfair Display + Lora (Google Fonts) |
-| Auth & DB | Supabase (PostgreSQL + GoTrue) |
-| Real-time | Supabase Realtime (Broadcast + Presence) |
-| Voice & Video | WebRTC (peer-to-peer) with Supabase signaling |
-| Whiteboard | Fabric.js (HTML5 Canvas) |
-| Audio | Web Audio API (noise generators, oscillator) |
-| Deployment | **Vercel** (Frontend) + **Supabase Engine** (Backend) |
+focus rooms is defined by its atmospheric approach to productivity. every detail—from the soft pastel palettes to the gentle curves of the interface—is curated to reduce digital noise.
 
-> 💡 **Why Vercel & Supabase?** You might also optionally use Railway for the Postgres backend if you wish to self-host Supabase services. However, connecting directly to Supabase cloud is fundamentally completely "Serverless", which maps seamlessly to our core cloud patterns!
+### 🌿 atmospheric audio
+- **Noise Generators**: Pure white, pink, and brown noise synthesized via the Web Audio API.
+- **Ambient Soundscapes**: Evocative loops of rain, forest murmurs, and café bustle.
+- **Frequency Tuner**: A tunable oscillator (20Hz–2000Hz) for custom sonic grounding.
 
----
+### 🎨 creative collaboration
+- **Shared Whiteboard**: A real-time canvas for brainstorming, sketching, and visual thinking.
+- **Snapshots**: Export your whiteboard as a PNG to preserve the flow of ideas.
+- **Sticky Notes**: Personal, translucent notes that stay visible only to you—perfect for private to-do lists.
 
-## 🧩 Design & Cloud Patterns
-
-This project implements **6 software design patterns** and **2 cloud computing patterns**. Every pattern is clearly marked in the code with comments.
-
-See [`PATTERNS.md`](./PATTERNS.md) for a complete guide with exact file locations.
-
-| # | Pattern | Type |
-|---|---------|------|
-| 1 | Observer | Software — Behavioral |
-| 2 | Factory | Software — Creational |
-| 3 | Strategy | Software — Behavioral |
-| 4 | Repository | Software — Structural |
-| 5 | Singleton | Software — Creational |
-| 6 | Command | Software — Behavioral |
-| 7 | Serverless Architecture | Cloud |
-| 8 | Event-Driven Architecture | Cloud Architecture |
+### 🐚 seamless connection
+- **Voice & Screen**: High-fidelity peer-to-peer communication powered by WebRTC.
+- **Presence**: Knowing who is with you in the room, with subtle indicators for activity.
+- **Personalization**: Choose from 8 curated themes—from *Lavender Dream* to *Midnight Muse*—to match your mood.
 
 ---
 
-## 🚀 Step-by-Step Setup Instructions
+## the architecture
 
-For an expanded set of step-by-step guidance including screenshots and exact navigation sequences, refer to [`SETUP.md`](./SETUP.md) located in this directory. 
+The technical foundation of focus rooms is built on modern "serverless" principles, ensuring scalability and real-time responsiveness without the overhead of traditional server management.
 
-### Prerequisites
-
-- **Node.js** 18+ installed ([download](https://nodejs.org))
-- **npm** (comes with Node.js)
-- A **Supabase** account (Free tier: [supabase.com](https://supabase.com))
-- A **Vercel** account (Free tier: [vercel.com](https://vercel.com))
-
-### 1. Database & Authentication (Supabase)
-
-1. Create a project at [Supabase](https://supabase.com).
-2. Grab your environment variables from **Project Settings → API**:
-   - `Project URL` → Map to `NEXT_PUBLIC_SUPABASE_URL`
-   - `anon / public key` → Map to `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Go to the **SQL Editor**, launch a **New Query**, and paste the full contents of [`supabase-schema.sql`](./supabase-schema.sql), then click **Run**.
-4. (Optional) Setup Google login by going to **Authentication → Providers**. Create an OAuth App inside Google Cloud Console and paste the secret/ID into Supabase.
-
-### 2. Local Environment Configuration
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/focus-rooms.git
-cd focus-rooms
-
-# Install dependencies
-npm install
-
-# Prepare environment values
-cp .env.example .env.local
-```
-
-Inside `.env.local`, map in the Supabase Variables you extracted during step 1.
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-```
-
-### 3. Run Development Server locally
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) and test the application securely.
+| layer | choice | rationale |
+| :--- | :--- | :--- |
+| **frontend** | Next.js & TypeScript | Type-safe, edge-ready, and performant. |
+| **styling** | Tailwind & Custom CSS | Soft glassmorphism and fluid animations. |
+| **database** | Supabase (Postgres) | Reliable relational storage with powerful Auth. |
+| **real-time** | Supabase Realtime | low-latency Pub/Sub for whiteboard and presence. |
+| **media** | WebRTC | P2P mesh for voice and screen sharing. |
 
 ---
 
-## ☁️ Deployment (Vercel)
+## blueprints & patterns
 
-This application is strictly optimized for **Vercel** deployment with zero-config edge rendering!
+This project serves as a practical implementation of **6 Software Design Patterns** and **2 Cloud Architectures**. Each pattern is a deliberate choice made to ensure the codebase remains maintainable, extensible, and robust.
 
-### 1. Upload to GitHub
-Initialize your repo and push your code.
-```bash
-git init
-git add .
-git commit -m "feat: initial commit"
-git branch -M main
-git remote add origin https://github.com/yourusername/focus-rooms-app.git
-git push -u origin main
-```
+> [!NOTE]
+> For a detailed technical breakdown of how and where these patterns are implemented, please refer to the **[PATTERNS.md](./PATTERNS.md)** guide.
 
-### 2. Vercel Hookup
-1. Log into your [Vercel Dashboard](https://vercel.com).
-2. Click **Add New** → **Project**, and import your newly created GitHub repository.
-3. Once imported, locate the **Environment Variables** drop down before clicking deploy.
-4. Input the two keys (`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
-5. Hit **Deploy** and wait less than a minute. Your app is officially live on a `.vercel.app` domain!
-
-### Wait, what about Railway?
-If you would like to run the databases via Railway, you could spin up a PostgreSQL instance there. However, Focus Rooms specifically needs **Supabase Realtime** for the Event-Driven architectural patterns (Whiteboards, P2P signaling). Supabase Cloud is highly recommended since self-hosting the full Supabase suite requires spinning up Docker nodes on Railway individually.
+1. **Observer** — Real-time event distribution.
+2. **Factory** — Dynamic audio generator creation.
+3. **Strategy** — Swappable theme logic.
+4. **Repository** — Decoupled database access.
+5. **Singleton** — Centralized Supabase client management.
+6. **Command** — Encapsulated whiteboard actions.
+7. **Serverless Architecture** — Our core cloud deployment strategy.
+8. **Event-Driven Architecture** — Real-time broadcast and presence sync.
 
 ---
 
-## 🎨 Color Themes
+## getting started
 
-| Theme | Colors |
-|-------|--------|
-| 🌸 Lavender Dream | Soft purple/lilac |
-| 🌹 Rose Garden | Pink/rose |
-| 🌊 Ocean Breeze | Cool blue |
-| 🌿 Sage Meadow | Earthy green |
-| 🌻 Honey Glow | Warm golden/amber |
-| 🧡 Sunset Ember | Coral/warm |
-| 🌙 Midnight Muse | Dark navy |
-| ☕ Mocha Cream | Warm brown/beige |
+Whether you are here to explore the code or to host your own focus session, the setup process is designed to be straightforward.
+
+1. **Prerequisites**: Ensure you have Node.js 18+ and a Supabase account ready.
+2. **Setup**: Follow the step-by-step guide in **[SETUP.md](./SETUP.md)** to configure your environment.
+3. **Run**: `npm install` followed by `npm run dev` brings the room to life locally.
 
 ---
 
-## 📁 Repository Structure Overview
+## aesthetics & typography
 
-```
-focus-rooms/
-├── public/                         # Static assets (sounds, etc.)
-├── src/
-│   ├── app/
-│   │   ├── auth/                   # Authentication gateways
-│   │   ├── dashboard/page.tsx      # Main dashboard logic
-│   │   ├── room/[code]/page.tsx    # Sub-room WebRTC/Realtime layout
-│   │   ├── settings/page.tsx       # Auth profile edits
-│   │   ├── layout.tsx              # Root HTML logic
-│   │   ├── page.tsx                # Landing
-│   │   └── globals.css             # Utilities (Tailwind wrapper)
-│   ├── components/                 # Isolated React Components (Whiteboard, Audio, Themes)
-│   ├── lib/
-│   │   ├── supabase/               # Pattern: Singleton DB Accessors
-│   │   ├── audio/                  # Pattern: Factory Audio Interfaces
-│   │   ├── themes/                 # Pattern: Strategy Themer
-│   │   ├── realtime/               # Pattern: Event-Driven Observer Logic
-│   │   ├── repositories/           # Pattern: Repository database proxies
-│   │   └── webrtc/                 # P2P mesh logic (Vanilla)
-│   └── proxy.ts                    # Routing & server-shield logic
-├── .env.example                    # Env var scaffold
-├── PATTERNS.md                     # Software & Cloud definitions
-├── SETUP.md                        # Expanded instructional list
-├── README.md                       # High Level Overview
-└── supabase-schema.sql             # Live database blueprint
-```
+The visual identity of focus rooms relies on two primary serif fonts to convey a sense of calm and clarity:
+- **Playfair Display**: Used for headings to evoke a refined, editorial feel.
+- **Lora**: Used for body text for its readability and soft, contemporary character.
+
+The color palette is built on **Strategy Pattern** tokens, allowing for seamless transitions between light and dark modes while maintaining the core "Pinterest-pastel" aesthetic.

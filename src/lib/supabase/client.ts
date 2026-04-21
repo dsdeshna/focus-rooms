@@ -1,10 +1,8 @@
-// ============================================================
-// === SINGLETON PATTERN IMPLEMENTED HERE ===
+// SINGLETON PATTERN IMPLEMENTED HERE
 // Explanation: We create a single Supabase browser client instance
 // that is reused across the entire client-side application.
 // This prevents multiple GoTrue/Realtime connections and ensures
 // consistent auth state everywhere.
-// ============================================================
 
 import { createBrowserClient } from '@supabase/ssr';
 

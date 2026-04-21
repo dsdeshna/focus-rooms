@@ -1,6 +1,4 @@
-// ============================================================
 // Focus Rooms — Type Definitions
-// ============================================================
 
 export interface Profile {
   id: string;
@@ -88,7 +86,7 @@ export interface SoundGenerator {
   getType(): string;
 }
 
-// === OBSERVER PATTERN — Event Types ===
+// OBSERVER PATTERN — Event Types
 export type RoomEventType =
   | 'screen-share-started'
   | 'screen-share-stopped'
@@ -110,7 +108,7 @@ export interface RoomEvent {
   timestamp: number;
 }
 
-// === COMMAND PATTERN — Whiteboard Command Types ===
+// COMMAND PATTERN — Whiteboard Command Types
 export interface DrawCommand {
   id: string;
   type: 'draw' | 'erase' | 'clear';

@@ -1,10 +1,8 @@
-// ============================================================
 // Next.js Proxy — Auth Protection
 // 
 // This proxy runs on EVERY request. It:
 // 1. Protects routes behind Supabase authentication
 // 2. Redirects authenticated users away from auth pages
-// ============================================================
 
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
@@ -12,7 +10,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  // ── Supabase Auth Client ──
+  //  Supabase Auth Client 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -38,7 +36,7 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // ── Route Protection ──
+  //  Route Protection 
   const protectedPaths = ['/dashboard', '/room', '/settings'];
   const isProtected = protectedPaths.some((p) =>
     request.nextUrl.pathname.startsWith(p)

@@ -201,7 +201,7 @@ export function getThemeColors(themeKey: string, isDark: boolean): Theme['colors
   return isDark ? base.dark : base.light;
 }
 
-// === STRATEGY CONTEXT: Applies the chosen theme strategy + mode ===
+// STRATEGY CONTEXT: Applies the chosen theme strategy + mode
 export function applyTheme(themeKey: string, isDark?: boolean): void {
   const base = baseThemes[themeKey];
   if (!base) return;
