@@ -204,13 +204,6 @@ export default function SettingsPage() {
           </button>
         </section>
 
-        {/* ── Appearance ── */}
-        <section className="settings-section">
-          <div className="section-label">🎨 &nbsp; appearance</div>
-          <p className="section-desc">switch between light & dark to match your mood.</p>
-          <ThemeSwitcher />
-        </section>
-
         {/* ── Security ── */}
         <section className="settings-section settings-section--danger">
           <div className="section-label section-label--danger">🔐 &nbsp; account security</div>
