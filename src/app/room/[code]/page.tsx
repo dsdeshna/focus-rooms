@@ -613,9 +613,8 @@ export default function RoomPage() {
           )}
         </main>
 
-        {/* Audio panel */}
-        {showAudioPanel && (
-          <aside className="room-panel room-panel--right">
+        {/* Audio panel — always mounted so playing state survives panel close/reopen */}
+        <aside className={`room-panel room-panel--right${showAudioPanel ? '' : ' room-panel--hidden'}`}>
             <div className="room-panel-header">
               <span className="room-panel-title">atmosphere</span>
               <button className="room-panel-close" onClick={() => setShowAudioPanel(false)}>
@@ -630,7 +629,6 @@ export default function RoomPage() {
             />
             </div>
           </aside>
-        )}
       </div>
 
       {/* Sticky notes */}
@@ -912,6 +910,10 @@ export default function RoomPage() {
         @keyframes panelInRight {
           from { opacity: 0; transform: translateX(12px) scale(0.98); }
           to   { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        /* Hidden panel: removed from layout but React keeps it mounted (preserves audio state) */
+        .room-panel--hidden {
+          display: none;
         }
 
         .room-panel-header {

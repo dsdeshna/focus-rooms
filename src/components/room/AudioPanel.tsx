@@ -56,6 +56,22 @@ export function AudioPanel({ realtimeManager, userId, userName }: AudioPanelProp
   const [frequency, setFrequency] = useState(432);
   const [freqActive, setFreqActive] = useState(false);
   const freqGenRef = useRef<FrequencyGenerator | null>(null);
+  // Keep a ref always pointing to the latest activeSounds for use in cleanup
+  const activeSoundsRef = useRef(activeSounds);
+  useEffect(() => { activeSoundsRef.current = activeSounds; }, [activeSounds]);
+
+  // Stop ALL playing sounds when component truly unmounts (e.g. user leaves room)
+  useEffect(() => {
+    return () => {
+      activeSoundsRef.current.forEach((sound) => {
+        try { sound.generator.stop(); } catch (_) {}
+      });
+      if (freqGenRef.current) {
+        try { freqGenRef.current.stop(); } catch (_) {}
+        freqGenRef.current = null;
+      }
+    };
+  }, []); // empty dep array = runs only on mount/unmount
 
   const handleAtmosphereEvent = useCallback((data: any) => {
     const { action, soundType, key, volume, freq } = data;
