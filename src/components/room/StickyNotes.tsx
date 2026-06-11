@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from 'react';
 import { NoteRepository } from '@/lib/repositories/NoteRepository';
 import { StickyNote } from '@/types';
 import { Plus, Trash2, X } from 'lucide-react';
+import { useTheme } from '@/components/theme/ThemeProvider';
 
 interface StickyNotesProps {
   roomId: string;
@@ -184,11 +185,11 @@ export function StickyNotes({ roomId, userId, onClose }: StickyNotesProps) {
 
 // ── Draggable Note ──────────────────────────────────────────────
 const NOTE_PALETTES = [
-  { bg: '#FFF9EC', border: '#F0E8CC' },  // warm cream
-  { bg: '#F0F5F0', border: '#D8E8D8' },  // sage
-  { bg: '#F5EFF5', border: '#E4D8E4' },  // lavender
-  { bg: '#FDF0F0', border: '#F0DADA' },  // blush
-  { bg: '#EFF4F9', border: '#D5E2EE' },  // mist blue
+  { bg: '#FFF9EC', border: '#F0E8CC', darkBg: '#3A3326', darkBorder: '#4F4432' },  // warm cream
+  { bg: '#F0F5F0', border: '#D8E8D8', darkBg: '#28362B', darkBorder: '#394A3C' },  // sage
+  { bg: '#F5EFF5', border: '#E4D8E4', darkBg: '#362D38', darkBorder: '#493C4C' },  // lavender
+  { bg: '#FDF0F0', border: '#F0DADA', darkBg: '#422828', darkBorder: '#5C3838' },  // blush
+  { bg: '#EFF4F9', border: '#D5E2EE', darkBg: '#253443', darkBorder: '#34475A' },  // mist blue
 ];
 
 function DraggableNote({
@@ -200,6 +201,7 @@ function DraggableNote({
   onUpdatePosition: (id: string, x: number, y: number) => void;
   onDelete: (id: string) => void;
 }) {
+  const { isDark } = useTheme();
   const [position, setPosition] = useState({
     x: note.position_x || 80 + (index % 4) * 260,
     y: note.position_y || 120 + Math.floor(index / 4) * 220 + (index % 2) * 30,
@@ -209,6 +211,8 @@ function DraggableNote({
   const dragOffset = useRef({ x: 0, y: 0 });
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const palette = NOTE_PALETTES[index % NOTE_PALETTES.length];
+  const currentBg = isDark ? palette.darkBg : palette.bg;
+  const currentBorder = isDark ? palette.darkBorder : palette.border;
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
@@ -243,8 +247,8 @@ function DraggableNote({
         top: `${position.y}px`,
         cursor: isDragging ? 'grabbing' : 'grab',
         zIndex: isDragging || isFocused ? 100 : 50,
-        background: palette.bg,
-        borderColor: palette.border,
+        background: currentBg,
+        borderColor: currentBorder,
       }}
       onMouseDown={handleMouseDown}
       role="region"
