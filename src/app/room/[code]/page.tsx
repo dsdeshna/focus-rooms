@@ -27,6 +27,19 @@ export default function RoomPage() {
   const supabase = createClient();
   const roomRepo = new RoomRepository();
 
+  /**
+   * Security: Only accept base64 data URLs for backgrounds.
+   * Prevents CSS injection where a malicious broadcast could inject
+   * an external URL like javascript: or http://tracker.evil.com.
+   * Room backgrounds are always stored as compressed data URLs.
+   */
+  const isSafeBackgroundUrl = (url: unknown): url is string | null => {
+    if (url === null || url === undefined) return true;
+    if (typeof url !== 'string') return false;
+    // Only allow base64-encoded data URLs (images)
+    return /^data:image\/(jpeg|png|webp|gif|svg\+xml);base64,/.test(url);
+  };
+
   // Core state
   const [room, setRoom] = useState<Room | null>(null);
   const [userId, setUserId] = useState<string>('');
@@ -103,11 +116,14 @@ export default function RoomPage() {
         setParticipants((prev) => prev.filter(p => p.user_id !== event.userId));
         if (peerRef.current) peerRef.current.removePeer(event.userId);
         break;
-      case 'background-changed':
-        if (event.data?.backgroundUrl !== undefined) {
-          setBackgroundUrl(event.data.backgroundUrl as string | null);
+      case 'background-changed': {
+        const incomingBg = event.data?.backgroundUrl;
+        // Security: validate incoming background URL to prevent CSS injection
+        if (isSafeBackgroundUrl(incomingBg)) {
+          setBackgroundUrl(incomingBg ?? null);
         }
         break;
+      }
     }
   }, [addNotification]);
 
@@ -230,7 +246,8 @@ export default function RoomPage() {
         });
       }
       if (room) await roomRepo.updateMicStatus(room.id, userId, newState);
-    } catch (err: any) {
+    } catch {
+      // Do not expose the raw error message — it can contain browser internals
       addNotification('Mic access denied. If on mobile, ensure you are using HTTPS or localhost.', 'warning');
       setIsMicOn(false);
     }

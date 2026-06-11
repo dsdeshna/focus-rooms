@@ -174,7 +174,7 @@ export default function DashboardPage() {
               className={`db-tab ${activeTab === 'create' ? 'db-tab--active' : ''}`}
               onClick={() => setActiveTab('create')}
             >
-              🌱 create a room
+              create a room
             </button>
             <button
               role="tab"
@@ -182,7 +182,7 @@ export default function DashboardPage() {
               className={`db-tab ${activeTab === 'join' ? 'db-tab--active' : ''}`}
               onClick={() => setActiveTab('join')}
             >
-              🚪 join a room
+              join a room
             </button>
           </div>
 

@@ -73,7 +73,7 @@ export default function LoginPage() {
             <p className="aside-quote">
               "focus is rare & disappears the second you notice it."
             </p>
-            <span className="aside-leaf">🌿</span>
+            <p className="aside-leaf"> ⏾ </p>
           </div>
         </aside>
 
@@ -261,7 +261,7 @@ export default function LoginPage() {
         }
         .aside-leaf {
           font-size: 3rem;
-          filter: saturate(0.7);
+          color: var(--color-background)
         }
 
         /* ── PANEL ── */

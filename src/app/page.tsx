@@ -65,7 +65,7 @@ export default function LandingPage() {
           <div className="feature-grid">
             <article className="feature-card feature-card--accent">
               <div className="feature-num">01</div>
-              <div className="feature-icon">✏️</div>
+              <div className="feature-icon">✎</div>
               <h3>blank canvas</h3>
               <p>
                 a whiteboard where you can draw, write, erase and go crazy PLUS 
@@ -75,7 +75,7 @@ export default function LandingPage() {
 
             <article className="feature-card">
               <div className="feature-num">02</div>
-              <div className="feature-icon">🔮</div>
+              <div className="feature-icon">𖦹</div>
               <h3>clarity</h3>
               <p>
                 real time background and sound sharing so you 
@@ -86,7 +86,7 @@ export default function LandingPage() {
 
             <article className="feature-card">
               <div className="feature-num">03</div>
-              <div className="feature-icon">🌿</div>
+              <div className="feature-icon">✦</div>
               <h3>your space</h3>
               <p>
                 make it feel like your room with
@@ -97,7 +97,7 @@ export default function LandingPage() {
 
             <article className="feature-card feature-card--accent">
               <div className="feature-num">04</div>
-              <div className="feature-icon">💌</div>
+              <div className="feature-icon">✉</div>
               <h3>sticky notes</h3>
               <p>
                 leave notes like you would on a desk -  
@@ -118,7 +118,7 @@ export default function LandingPage() {
 
         {/* ── Footer ── */}
         <footer className="site-footer">
-          <span>we made a thing, be nice to it &hearts; deshna & raksha</span>
+          <span>made a thing, be nice to it &hearts; deshna</span>
         </footer>
       </main>
 

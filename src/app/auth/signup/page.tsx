@@ -112,7 +112,7 @@ export default function SignupPage() {
         <aside className="auth-aside">
           <div className="aside-content">
             <p className="aside-quote">
-              focus is rare,<br></br> so we made< br></br> a place for it
+              focus is not <br></br> easy to come by,<br></br> so we made< br></br> a place for it
             </p>
             <div className="aside-petals">
               <span>˚⋆𐙚｡⋆𖦹.✧˚</span>
@@ -196,7 +196,7 @@ export default function SignupPage() {
           font-family: var(--font-heading);
           font-style: italic;
           font-size: clamp(1.8rem, 2.5vw, 2.8rem);
-          color: white;
+          color: var(--color-background);
           line-height: 1.3;
           opacity: 0.92;
         }
@@ -205,7 +205,7 @@ export default function SignupPage() {
           display: flex;
           gap: 1rem;
           font-size: 2rem;
-          filter: brightness(1.1);
+          color: var(--color-background);
         }
 
         .auth-panel {
