@@ -128,7 +128,11 @@ export default function RoomPage() {
   }, [addNotification]);
 
   const handlePresenceSync = useCallback((presences: PresenceState[]) => {
-    setParticipants(presences);
+    // Deduplicate by user_id so a user only appears once, even if they have multiple connections/tabs
+    const uniqueMap = new Map<string, PresenceState>();
+    const sorted = [...presences].sort((a, b) => new Date(a.online_at).getTime() - new Date(b.online_at).getTime());
+    sorted.forEach(p => uniqueMap.set(p.user_id, p));
+    setParticipants(Array.from(uniqueMap.values()));
   }, []);
 
   const handleRealtimeStatus = useCallback((status: any) => {
